@@ -229,9 +229,9 @@ if (file.exists("Z:/Projects/ConnectToOracle.R")) {
   # # devtools::install_github("afsc-gap-products/gapindex")
   # library(gapindex)
   # channel <- gapindex::get_connected()
-
+  
   # or
-
+  
   library(rstudioapi)
   library(RODBC)
   channel <- odbcConnect(dsn = "AFSC",
@@ -252,30 +252,30 @@ locations<-c(
 error_loading <- c()
 for (i in 1:length(locations)){
   print(locations[i])
-
+  
   a <- RODBC::sqlQuery(channel = channel,
                        query = paste0("SELECT *
     FROM ", locations[i], "
     FETCH FIRST 1 ROWS ONLY;"))
-
+  
   end0 <- c()
-
+  
   start0 <- ifelse(!("START_TIME" %in% names(a)),
                    "*",
                    paste0(paste0(names(a)[names(a) != "START_TIME"], sep = ",", collapse = " "),
                           " TO_CHAR(START_TIME,'MM/DD/YYYY HH24:MI:SS') START_TIME "))
-
+  
   a <- RODBC::sqlQuery(channel = channel,
                        query = paste0("SELECT ", start0, " FROM ", locations[i], end0, "; "))
-
+  
   if (is.null(nrow(a))) { # if (sum(grepl(pattern = "SQLExecDirect ", x = a))>1) {
     error_loading <- c(error_loading, locations[i])
   } else {
     
     assign(x = paste0(tolower(gsub(pattern = '.',
-                                              replacement = "_",
-                                              x = locations[i],
-                                              fixed = TRUE)), "0"), 
+                                   replacement = "_",
+                                   x = locations[i],
+                                   fixed = TRUE)), "0"), 
            value = a %>% 
              janitor::clean_names())
     
@@ -400,13 +400,22 @@ shp_all <- list()
 shp_all$lon.breaks <- c(160, 165, 170,  175, -180, -175, -170, -165, -160, -155, -150, -145, -140, -135, -130, -125, -120)
 shp_all$lat.breaks <- seq(from = 40, to = 70, by = 2)
 
-## Land (polygons) -------------------------------------------------------------
+## Land (polygons; orig to sean's package!) ------------------------------------
 
 shp_all$akland <- shp_bs$akland %>%
   sf::st_transform(crs = crs_out) %>% 
   dplyr::rename(name = DESC_)
 
 shp_all$akland$name[2] <- "Alaska"
+
+## world (polygons, not orig to sean's package) --------------------------------
+
+shp_all$world_coordinates <- maps::map("world", plot = FALSE, fill = TRUE) %>% 
+  sf::st_as_sf() %>%
+  # sf::st_union() %>% 
+  sf::st_transform(crs = crs_out) %>% 
+  dplyr::filter(ID %in% c("USA", "Russia", "Canada")) %>% 
+  dplyr::mutate(ID = ifelse(ID == "USA", "Alaska", ID))
 
 ## Survey area (polygons) ------------------------------------------------------
 
@@ -697,166 +706,190 @@ shp_all$place.labels = data.frame(
 # Save shapefile ---------------------------------------------------------------
 
 save(shp_all, file = here::here("data", "shp_all.rdata"))
+# load(file = here::here("data", "shp_all.rdata"))
 
 # TEST PLOT --------------------------------------------------------------------
 
 if (FALSE) {
-
-library(ggplot2)
-
-## plotting for each region ----------------------------------------------------
-
-for (survey_definition_id0 in unique(dat_design_year$survey_definition_id)) {
   
-  SRVY0 <- dat_survey_design$SRVY[dat_survey_design$survey_definition_id == survey_definition_id0][1]
+  library(ggplot2)
+  library(dplyr)
+  library(magrittr)
+  # load(file = here::here("data", "shp_all.rdata"))
+  
+  ## plotting for each region ----------------------------------------------------
+  
+  for (survey_definition_id0 in unique(shp_all$survey.area$survey_definition_id)) {
+    
+    SRVY0 <- shp_all$survey.area$SRVY[shp_all$survey.area$survey_definition_id == survey_definition_id0][1]
+    
+    figure0 <- ggplot() +
+      ggplot2::geom_sf(data = shp_all$bathymetry,
+                       alpha = .5, 
+                       color = "lightblue",
+                       mapping = aes(geometry = geometry)) +
+      # ggplot2::geom_sf(data = shp_all$graticule, 
+      #         linetype = "dashed",
+      #         mapping = aes(geometry = geometry))  +
+      ggplot2::geom_sf(data = shp_all$akland,
+                       mapping = aes(geometry = geometry), 
+                       fill = "grey50",
+                       color = "transparent", 
+                       alpha = 0.5) + 
+      ggplot2::geom_sf(data = shp_all$survey.grid %>% 
+                         dplyr::filter(is.na(comment)) %>%
+                         dplyr::filter(survey_definition_id == survey_definition_id0),
+                       alpha = .5, 
+                       color = "green",
+                       mapping = aes(geometry = geometry))  +
+      ggplot2::geom_sf(data = shp_all$survey.strata %>%
+                         dplyr::filter(survey_definition_id == survey_definition_id0),
+                       mapping = aes(geometry = geometry), 
+                       color = "blue",
+                       alpha = 0.5)  +
+      ggplot2::geom_sf(data = shp_all$survey.area %>% 
+                         dplyr::filter(survey_definition_id == survey_definition_id0),
+                       mapping = aes(geometry = geometry, 
+                                     fill = SRVY), 
+                       color = "red", 
+                       alpha = 0.15, 
+                       show.legend = FALSE)  +
+      ggplot2::geom_sf(data = shp_all$place.labels,
+                       mapping = aes(geometry = geometry,
+                                     color = type)) +
+      ggplot2::geom_sf_text(data = shp_all$place.labels,
+                            mapping = aes(geometry = geometry, 
+                                          angle = angle,
+                                          # color = type,
+                                          label = lab), 
+                            color = "black",
+                            show.legend = FALSE) +
+      ggplot2::ggtitle(SRVY0) + 
+      ggplot2::scale_x_continuous(
+        name = "Longitude",
+        breaks = shp_all$lon.breaks,
+        limits = c(sf::st_bbox(shp_all$survey.area[shp_all$survey.area$SRVY == SRVY0,])$xmin,
+                   sf::st_bbox(shp_all$survey.area[shp_all$survey.area$SRVY == SRVY0,])$xmax)) +
+      ggplot2::scale_y_continuous(
+        name = "Latitude",
+        breaks = shp_all$lat.breaks,
+        limits = c(sf::st_bbox(shp_all$survey.area[shp_all$survey.area$SRVY == SRVY0,])$ymin,
+                   sf::st_bbox(shp_all$survey.area[shp_all$survey.area$SRVY == SRVY0,])$ymax)) + 
+      
+      # ggplot2::scale_x_continuous(
+      #   name = "Longitude",
+      #                             breaks = shp_all$lon.breaks[SRVY0][[1]],
+      #                             limits = c(sf::st_bbox(shp_all$survey.area[shp_all$survey.area$SRVY == SRVY0,])$xmin,
+      #                                        sf::st_bbox(shp_all$survey.area[shp_all$survey.area$SRVY == SRVY0,])$xmax)) +
+      #     ggplot2::scale_y_continuous(
+      #   name = "Latitude",
+      #                             breaks = shp_all$lat.breaks[SRVY0][[1]],
+      #                             limits = c(sf::st_bbox(shp_all$survey.area[shp_all$survey.area$SRVY == SRVY0,])$ymin,
+      #                                        sf::st_bbox(shp_all$survey.area[shp_all$survey.area$SRVY == SRVY0,])$ymax)) + 
+      ggplot2::theme_bw()  + 
+      ggplot2::theme(
+        panel.border = element_rect(colour = "grey50", fill=NA, linewidth=.5), 
+        plot.margin=unit(c(0,0,0,0), "cm") , 
+        panel.background = element_rect(fill = "white"), #grey95
+        legend.position="bottom",
+        legend.direction="horizontal",
+        legend.justification="left",
+        legend.background = element_blank(),
+        legend.box.background = element_blank())
+    
+    ggplot2::ggsave(filename = here::here("data", paste0("test_", SRVY0, ".png")), 
+                    plot = figure0, 
+                    height = 6, 
+                    width = 6)
+    
+    # print(figure0)
+  }
+  
+  ## plotting for all regions ----------------------------------------------------
   
   figure0 <- ggplot() +
     ggplot2::geom_sf(data = shp_all$bathymetry,
-            alpha = .5, 
-            color = "lightblue",
-            mapping = aes(geometry = geometry)) +
+                     alpha = .5, 
+                     color = "lightblue",
+                     mapping = aes(geometry = geometry)) +
     # ggplot2::geom_sf(data = shp_all$graticule, 
     #         linetype = "dashed",
     #         mapping = aes(geometry = geometry))  +
     ggplot2::geom_sf(data = shp_all$akland,
-            mapping = aes(geometry = geometry), 
-            fill = "grey50",
-            color = "transparent", 
-            alpha = 0.5) + 
+                     mapping = aes(geometry = geometry), 
+                     fill = "grey50",
+                     color = "transparent", 
+                     alpha = 0.5) + 
     ggplot2::geom_sf(data = shp_all$survey.grid %>% 
-              dplyr::filter(is.na(comment)) %>%
-              dplyr::filter(survey_definition_id == survey_definition_id0),
-            alpha = .5, 
-            color = "green",
-            mapping = aes(geometry = geometry))  +
-    ggplot2::geom_sf(data = shp_all$survey.strata %>%
-              dplyr::filter(survey_definition_id == survey_definition_id0),
-            mapping = aes(geometry = geometry), 
-            color = "blue",
-            alpha = 0.5)  +
-    ggplot2::geom_sf(data = shp_all$survey.area %>% 
-              dplyr::filter(survey_definition_id == survey_definition_id0),
-            mapping = aes(geometry = geometry, 
-                          fill = SRVY), 
-            color = "red", 
-            alpha = 0.15, 
-            show.legend = FALSE)  +
-    ggplot2::geom_sf(data = shp_all$place.labels,
-            mapping = aes(geometry = geometry,
-                          color = type)) +
-    ggplot2::geom_sf_text(data = shp_all$place.labels,
-                 mapping = aes(geometry = geometry, 
-                               angle = angle,
-                               # color = type,
-                               label = lab), 
-                 color = "black",
-                 show.legend = FALSE) +
-    ggplot2::ggtitle(SRVY0) + 
-    ggplot2::scale_x_continuous(
-      name = "Longitude",
-      breaks = shp_all$lon.breaks,
-      limits = c(sf::st_bbox(shp_all$survey.area[shp_all$survey.area$SRVY == SRVY0,])$xmin,
-                 sf::st_bbox(shp_all$survey.area[shp_all$survey.area$SRVY == SRVY0,])$xmax)) +
-    ggplot2::scale_y_continuous(
-      name = "Latitude",
-      breaks = shp_all$lat.breaks,
-      limits = c(sf::st_bbox(shp_all$survey.area[shp_all$survey.area$SRVY == SRVY0,])$ymin,
-                 sf::st_bbox(shp_all$survey.area[shp_all$survey.area$SRVY == SRVY0,])$ymax)) + 
+                       dplyr::filter(is.na(comment)),
+                     alpha = .5, 
+                     color = "green",
+                     mapping = aes(geometry = geometry))  +
+    ggplot2::geom_sf(data = shp_all$survey.strata,
+                     mapping = aes(geometry = geometry), 
+                     color = "blue",
+                     alpha = 0.5)  +
+    ggplot2::geom_sf(data = shp_all$survey.area,
+                     mapping = aes(geometry = geometry, 
+                                   fill = SRVY), 
+                     color = "red", 
+                     alpha = 0.15, 
+                     show.legend = FALSE)  +
+
+    # ggplot2::geom_sf_text(data = shp_all$place.labels,
+    #                       mapping = aes(geometry = geometry, 
+    #                                     angle = angle,
+    #                                     # color = type,
+    #                                     label = lab), 
+    #                       color = "black",
+    #                       show.legend = FALSE) +
+    # alt: 
+    ggplot2::geom_sf_text(
+      data = shp_all$place.labels %>% dplyr::filter(type == "mainland"),
+      mapping = aes(label = lab, angle = angle), 
+      color = "grey60", 
+      size = 3, 
+      show.legend = FALSE) + 
+    ggplot2::geom_sf_text(
+      data = shp_all$place.labels %>% dplyr::filter(type == "survey"),
+      mapping = aes(label = lab, angle = angle), 
+      color = "black",
+      fontface = "bold",
+      size = 2, 
+      show.legend = FALSE) + 
+    ggplot2::geom_sf_text(
+      data = shp_all$place.labels %>% dplyr::filter(!(type %in% c("mainland", "survey"))),
+      mapping = aes(label = lab, angle = angle), 
+      color = "grey10", 
+      fontface = "italic", 
+      size = 2, 
+      show.legend = FALSE) + 
     
-    # ggplot2::scale_x_continuous(
-    #   name = "Longitude",
-    #                             breaks = shp_all$lon.breaks[SRVY0][[1]],
-    #                             limits = c(sf::st_bbox(shp_all$survey.area[shp_all$survey.area$SRVY == SRVY0,])$xmin,
-    #                                        sf::st_bbox(shp_all$survey.area[shp_all$survey.area$SRVY == SRVY0,])$xmax)) +
-    #     ggplot2::scale_y_continuous(
-    #   name = "Latitude",
-    #                             breaks = shp_all$lat.breaks[SRVY0][[1]],
-    #                             limits = c(sf::st_bbox(shp_all$survey.area[shp_all$survey.area$SRVY == SRVY0,])$ymin,
-    #                                        sf::st_bbox(shp_all$survey.area[shp_all$survey.area$SRVY == SRVY0,])$ymax)) + 
+    ggplot2::scale_x_continuous(name = "Longitude",
+                                breaks = shp_all$lon.breaks,
+                                limits = c(sf::st_bbox(shp_all$survey.area)$xmin, 
+                                           sf::st_bbox(shp_all$survey.area)$xmax)) +
+    ggplot2::scale_y_continuous(name = "Latitude",
+                                breaks = shp_all$lat.breaks,
+                                limits = c(sf::st_bbox(shp_all$survey.area)$ymin, 
+                                           sf::st_bbox(shp_all$survey.area)$ymax)) + 
     ggplot2::theme_bw()  + 
     ggplot2::theme(
       panel.border = element_rect(colour = "grey50", fill=NA, linewidth=.5), 
       plot.margin=unit(c(0,0,0,0), "cm") , 
       panel.background = element_rect(fill = "white"), #grey95
+      panel.grid = element_line(colour="grey80", linewidth = 0.5), 
       legend.position="bottom",
       legend.direction="horizontal",
       legend.justification="left",
       legend.background = element_blank(),
       legend.box.background = element_blank())
   
-  ggplot2::ggsave(filename = here::here("data", paste0("test_", SRVY0, ".png")), 
+  # figure0
+  
+  ggplot2::ggsave(filename = here::here("data", "test_all.png"), 
                   plot = figure0, 
                   height = 6, 
                   width = 6)
   
-  # print(figure0)
-}
-
-## plotting for all regions ----------------------------------------------------
-
-figure0 <- ggplot() +
-  ggplot2::geom_sf(data = shp_all$bathymetry,
-          alpha = .5, 
-          color = "lightblue",
-          mapping = aes(geometry = geometry)) +
-  # ggplot2::geom_sf(data = shp_all$graticule, 
-  #         linetype = "dashed",
-  #         mapping = aes(geometry = geometry))  +
-  ggplot2::geom_sf(data = shp_all$akland,
-          mapping = aes(geometry = geometry), 
-          fill = "grey50",
-          color = "transparent", 
-          alpha = 0.5) + 
-  ggplot2::geom_sf(data = shp_all$survey.grid %>% 
-            dplyr::filter(is.na(comment)),
-          alpha = .5, 
-          color = "green",
-          mapping = aes(geometry = geometry))  +
-  ggplot2::geom_sf(data = shp_all$survey.strata,
-          mapping = aes(geometry = geometry), 
-          color = "blue",
-          alpha = 0.5)  +
-  ggplot2::ggplot:: geom_sf(data = shp_all$survey.area,
-          mapping = aes(geometry = geometry, 
-                        fill = SRVY), 
-          color = "red", 
-          alpha = 0.15, 
-          show.legend = FALSE)  +
-  # ggplot2::geom_sf(data = shp_all$place.labels,
-  #         mapping = aes(geometry = geometry, 
-  #                       color = type)) +
-  ggplot2::geom_sf_text(data = shp_all$place.labels,
-               mapping = aes(geometry = geometry, 
-                             angle = angle,
-                             # color = type,
-                             label = lab), 
-               color = "black",
-               show.legend = FALSE) +
-  ggplot2::scale_x_continuous(name = "Longitude",
-                              breaks = shp_all$lon.breaks,
-                              limits = c(sf::st_bbox(shp_all$survey.area)$xmin, 
-                                         sf::st_bbox(shp_all$survey.area)$xmax)) +
-  ggplot2::scale_y_continuous(name = "Latitude",
-                              breaks = shp_all$lat.breaks,
-                              limits = c(sf::st_bbox(shp_all$survey.area)$ymin, 
-                                         sf::st_bbox(shp_all$survey.area)$ymax)) + 
-  ggplot2::theme_bw()  + 
-  ggplot2::theme(
-    panel.border = element_rect(colour = "grey50", fill=NA, linewidth=.5), 
-    plot.margin=unit(c(0,0,0,0), "cm") , 
-    panel.background = element_rect(fill = "white"), #grey95
-    panel.grid = element_line(colour="grey80", linewidth = 0.5), 
-    legend.position="bottom",
-    legend.direction="horizontal",
-    legend.justification="left",
-    legend.background = element_blank(),
-    legend.box.background = element_blank())
-
-# figure0
-
-ggplot2::ggsave(filename = here::here("data", "test_all.png"), 
-                plot = figure0, 
-                height = 6, 
-                width = 6)
-
 }
