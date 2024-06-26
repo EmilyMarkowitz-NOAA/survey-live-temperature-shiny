@@ -7,6 +7,10 @@ library(jsonlite)
 library(dplyr)
 options(scipen = 999)
 
+
+doihaveinternet <- FALSE
+
+if (doihaveinternet) {
 # link to the Haul API
 api_link_haul <- "https://apps-st.fisheries.noaa.gov/ods/foss/afsc_groundfish_survey_haul/"
 
@@ -208,6 +212,11 @@ FROM RACE_DATA.SURVEYS;")),
   dat_haul_oracleraw <- data.frame()
 }
 
+  save(dat_haul_oracleraw, dat_haul_api, date_max, file = here::here("data","backupdata.rdat"))
+
+} else {
+  load(here::here("data","backupdata.rdat"))
+}
 # Combined haul data --------------------------------------------------------------------
 
 dat <- dat_event <- dplyr::bind_rows(dat_haul_oracleraw, dat_haul_api)  %>% 
