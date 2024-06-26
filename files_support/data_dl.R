@@ -366,10 +366,6 @@ dat_survey_design <- dplyr::left_join(
       survey_definition_id == 78 ~ "BSS",
       survey_definition_id == 47 ~ "GOA",
       survey_definition_id == 52 ~ "AI"))
-head(dat_survey_design) %>% 
-  flextable::flextable() %>% 
-  flextable::theme_zebra() %>% 
-  flextable::width(width = nrow(dat_survey_design)/6.5)
 
 # Load shapefiles --------------------------------------------------------------
 
