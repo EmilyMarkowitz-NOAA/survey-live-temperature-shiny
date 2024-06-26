@@ -414,7 +414,7 @@ shp_all$akland$name[2] <- "Alaska"
 
 ## Survey area (polygons) ------------------------------------------------------
 
-shp$survey.area <- dplyr::bind_rows(list(
+shp_all$survey.area <- dplyr::bind_rows(list(
   ## removing the bs.all because I am hoping it is redundant to NBS and EBS unioned, 
   ## and can just be selected together by the user
   # shp_bs$survey.area %>%
@@ -467,12 +467,12 @@ for (i in unique(temp$degree)) {
       head(1)) # take first of duplicate
 }
 
-shp$graticule <- temp0
+shp_all$graticule <- temp0
 
 ## Survey strata (polygons) ----------------------------------------------------
 
 # Stratum
-shp$survey.strata <- dplyr::bind_rows(list(
+shp_all$survey.strata <- dplyr::bind_rows(list(
   ## removing the bs.all because I am hoping it is redundant to NBS and EBS unioned, 
   ## and can just be selected together by the user
   # shp_bs_c$survey.strata %>%
@@ -533,11 +533,11 @@ shp$survey.strata <- dplyr::bind_rows(list(
   dplyr::relocate(survey_definition_id, SRVY)
 
 # Viz
-x <- shp$survey.strata
+x <- shp_all$survey.strata
 
 ## Survey station grids (polygon) ----------------------------------------------
 
-shp$survey.grid <- dplyr::bind_rows(list(
+shp_all$survey.grid <- dplyr::bind_rows(list(
   
   ## removing the bs.all because I am hoping it is redundant to NBS and EBS unioned, 
   ## and can just be selected together by the user
@@ -611,7 +611,7 @@ shp$survey.grid <- dplyr::bind_rows(list(
   dplyr::left_join(y = dat_areas, relationship = "many-to-many")
 
 # Viz
-x <- shp$survey.grid
+x <- shp_all$survey.grid
 
 ## Ocean bathymetry (lines) ----------------------------------------------------
 
@@ -648,7 +648,7 @@ shp_all$bathymetry <- shp_all$bathymetry %>%
 
 ## Plot lables (data.frame) ----------------------------------------------------
 
-shp$place.labels = shp_ebs$place.labels %>% 
+shp_all$place.labels = shp_ebs$place.labels %>% 
   dplyr::mutate(angle = ifelse(lab == "U.S.-Russia Maritime Boundary", 45, 0)) %>% 
   sf::st_as_sf(coords = c("x", "y"),
                remove = FALSE,
@@ -668,7 +668,7 @@ shp$place.labels = shp_ebs$place.labels %>%
 
 ### Pretty plot ----------------------------------------------------------------
 
-shp$place.labels = data.frame(
+shp_all$place.labels = data.frame(
   type = c("islands", "islands", "islands", "islands", 
            "mainland", "mainland", "mainland", 
            "convention line", "peninsula", 
