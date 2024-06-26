@@ -700,7 +700,7 @@ shp_all$place.labels = data.frame(
 
 # Save shapefile ---------------------------------------------------------------
 
-save(shp_all, file = here::here("data", "shp1.rdata"))
+save(shp_all, file = here::here("data", "shp_all.rdata"))
 
 
 
