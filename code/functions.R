@@ -11,7 +11,7 @@
 PKG <- c(
   "devtools",
   # Mapping
-  "akgfmaps", # devtools::install_github("safsc-gap-products/akgfmaps", build_vignettes = TRUE)
+  "akgfmaps", # devtools::install_github("afsc-gap-products/akgfmaps", build_vignettes = TRUE)
   "sf",
   "ggspatial", 
   

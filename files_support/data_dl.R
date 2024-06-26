@@ -1,14 +1,14 @@
 #' ---------------------------------------------
 #' title: Create public data 
 #' author: EH Markowitz
-#' start date: 2022-01-01
+#' start date: 2024-01-01
 #' Notes: 
 #' ---------------------------------------------
 
 # 
 # # Shapefiles -------------------------------------------------------------------
 # 
-# ## EBS + NBS  ------------------------------------------------------------------
+## ## EBS + NBS  ------------------------------------------------------------------
 # survey_area <- akgfmaps::get_base_layers(select.region = "bs.all", set.crs = "auto")
 # survey_area$survey.grid <- survey_area$survey.grid %>% 
 #   sf::st_transform(x = ., survey_area$crs$input) %>%
@@ -25,19 +25,19 @@
 #   dplyr::mutate(SRVY = ifelse(SURVEY == "EBS_SHELF", "EBS", "NBS"))
 # shp_bs <- survey_area
 # 
-# ## EBS  ------------------------------------------------------------------------
+## ## EBS  ------------------------------------------------------------------------
 # survey_area <- akgfmaps::get_base_layers(select.region = "bs.south", set.crs = "auto")
 # survey_area$survey.area <- shp_bs$survey.area %>%
 #   dplyr::filter(SRVY == "EBS")
 # shp_ebs <- survey_area
 # 
-# ## NBS  ------------------------------------------------------------------------
+## ## NBS  ------------------------------------------------------------------------
 # survey_area <- akgfmaps::get_base_layers(select.region = "bs.north", set.crs = "auto")
 # survey_area$survey.area <- shp_bs$survey.area %>%
 #   dplyr::filter(SRVY == "NBS")
 # shp_nbs <- survey_area
 # 
-# ## AI  ------------------------------------------------------------------------
+## ## AI  ------------------------------------------------------------------------
 # survey_area <- akgfmaps::get_base_layers(select.region = "ai", set.crs = "auto")
 # survey_area$survey.grid <-
 #   dplyr::left_join(
@@ -61,7 +61,7 @@
 #                 SRVY = "AI")
 # shp_ai <- survey_area
 # 
-# ## GOA  ------------------------------------------------------------------------
+## ## GOA  ------------------------------------------------------------------------
 # survey_area <- akgfmaps::get_base_layers(select.region = "goa", set.crs = "auto")
 # survey_area$survey.grid <-  
 #   dplyr::left_join(
@@ -83,7 +83,7 @@
 # shp_goa <- survey_area
 # 
 # 
-# ## bsslope  ------------------------------------------------------------------------
+## ## bsslope  ------------------------------------------------------------------------
 # survey_area <- akgfmaps::get_base_layers(select.region = "ebs.slope", set.crs = "auto")
 # survey_area$survey.area <- survey_area$survey.area %>% 
 #   dplyr::mutate(SRVY = "BSS")
@@ -91,7 +91,7 @@
 # 
 # ## combine  ------------------------------------------------------------------------
 # 
-# ### survey area  ------------------------------------------------------------------------
+## ### survey area  ------------------------------------------------------------------------
 # 
 # shp_surv <- dplyr::bind_rows(list(
 #   shp_ebs$survey.area %>% 
@@ -121,7 +121,7 @@
 #                                    survey_long = paste0(survey, " Bottom Trawl Survey")), 
 #                    by = "SRVY")
 # 
-# ### survey station points  ------------------------------------------------------------------------
+## ### survey station points  ------------------------------------------------------------------------
 # 
 # shp_stn <- dplyr::bind_rows(list(
 #   shp_ebs$survey.grid %>% 
@@ -164,7 +164,7 @@
 #   dplyr::rename(lon = X, 
 #                 lat = Y) 
 # 
-# ### survey stratum areas ------------------------------------------------------------------------
+## ### survey stratum areas ------------------------------------------------------------------------
 # 
 # shp_strat <- dplyr::bind_rows(list(
 #   shp_bs$survey.strata %>% 
@@ -205,14 +205,10 @@
 #                    by = "SRVY")
 # 
 # save(shp_surv, shp_stn, shp_strat, file = here::here("data", "shp.rdata"))
-# 
-# 
+
+
 # #### NEW AND IMPROVDED, BUT NOT YET INTEGRATED ---------------------------------
-# 
-# # Load shape files -------------------------------------------------------------
-# 
-# 
-# 
+
 # Download oracle data ----------------------------------------------------------
 
 # Connect to oracle ------------------------------------------------------------
@@ -702,5 +698,165 @@ shp_all$place.labels = data.frame(
 
 save(shp_all, file = here::here("data", "shp_all.rdata"))
 
+# TEST PLOT --------------------------------------------------------------------
 
+if (FALSE) {
 
+library(ggplot2)
+
+## plotting for each region ----------------------------------------------------
+
+for (survey_definition_id0 in unique(dat_design_year$survey_definition_id)) {
+  
+  SRVY0 <- dat_survey_design$SRVY[dat_survey_design$survey_definition_id == survey_definition_id0][1]
+  
+  figure0 <- ggplot() +
+    ggplot2::geom_sf(data = shp_all$bathymetry,
+            alpha = .5, 
+            color = "lightblue",
+            mapping = aes(geometry = geometry)) +
+    # ggplot2::geom_sf(data = shp_all$graticule, 
+    #         linetype = "dashed",
+    #         mapping = aes(geometry = geometry))  +
+    ggplot2::geom_sf(data = shp_all$akland,
+            mapping = aes(geometry = geometry), 
+            fill = "grey50",
+            color = "transparent", 
+            alpha = 0.5) + 
+    ggplot2::geom_sf(data = shp_all$survey.grid %>% 
+              dplyr::filter(is.na(comment)) %>%
+              dplyr::filter(survey_definition_id == survey_definition_id0),
+            alpha = .5, 
+            color = "green",
+            mapping = aes(geometry = geometry))  +
+    ggplot2::geom_sf(data = shp_all$survey.strata %>%
+              dplyr::filter(survey_definition_id == survey_definition_id0),
+            mapping = aes(geometry = geometry), 
+            color = "blue",
+            alpha = 0.5)  +
+    ggplot2::geom_sf(data = shp_all$survey.area %>% 
+              dplyr::filter(survey_definition_id == survey_definition_id0),
+            mapping = aes(geometry = geometry, 
+                          fill = SRVY), 
+            color = "red", 
+            alpha = 0.15, 
+            show.legend = FALSE)  +
+    ggplot2::geom_sf(data = shp_all$place.labels,
+            mapping = aes(geometry = geometry,
+                          color = type)) +
+    ggplot2::geom_sf_text(data = shp_all$place.labels,
+                 mapping = aes(geometry = geometry, 
+                               angle = angle,
+                               # color = type,
+                               label = lab), 
+                 color = "black",
+                 show.legend = FALSE) +
+    ggplot2::ggtitle(SRVY0) + 
+    ggplot2::scale_x_continuous(
+      name = "Longitude",
+      breaks = shp_all$lon.breaks,
+      limits = c(sf::st_bbox(shp_all$survey.area[shp_all$survey.area$SRVY == SRVY0,])$xmin,
+                 sf::st_bbox(shp_all$survey.area[shp_all$survey.area$SRVY == SRVY0,])$xmax)) +
+    ggplot2::scale_y_continuous(
+      name = "Latitude",
+      breaks = shp_all$lat.breaks,
+      limits = c(sf::st_bbox(shp_all$survey.area[shp_all$survey.area$SRVY == SRVY0,])$ymin,
+                 sf::st_bbox(shp_all$survey.area[shp_all$survey.area$SRVY == SRVY0,])$ymax)) + 
+    
+    # ggplot2::scale_x_continuous(
+    #   name = "Longitude",
+    #                             breaks = shp_all$lon.breaks[SRVY0][[1]],
+    #                             limits = c(sf::st_bbox(shp_all$survey.area[shp_all$survey.area$SRVY == SRVY0,])$xmin,
+    #                                        sf::st_bbox(shp_all$survey.area[shp_all$survey.area$SRVY == SRVY0,])$xmax)) +
+    #     ggplot2::scale_y_continuous(
+    #   name = "Latitude",
+    #                             breaks = shp_all$lat.breaks[SRVY0][[1]],
+    #                             limits = c(sf::st_bbox(shp_all$survey.area[shp_all$survey.area$SRVY == SRVY0,])$ymin,
+    #                                        sf::st_bbox(shp_all$survey.area[shp_all$survey.area$SRVY == SRVY0,])$ymax)) + 
+    ggplot2::theme_bw()  + 
+    ggplot2::theme(
+      panel.border = element_rect(colour = "grey50", fill=NA, linewidth=.5), 
+      plot.margin=unit(c(0,0,0,0), "cm") , 
+      panel.background = element_rect(fill = "white"), #grey95
+      legend.position="bottom",
+      legend.direction="horizontal",
+      legend.justification="left",
+      legend.background = element_blank(),
+      legend.box.background = element_blank())
+  
+  ggplot2::ggsave(filename = here::here("data", paste0("test_", SRVY0, ".png")), 
+                  plot = figure0, 
+                  height = 6, 
+                  width = 6)
+  
+  # print(figure0)
+}
+
+## plotting for all regions ----------------------------------------------------
+
+figure0 <- ggplot() +
+  ggplot2::geom_sf(data = shp_all$bathymetry,
+          alpha = .5, 
+          color = "lightblue",
+          mapping = aes(geometry = geometry)) +
+  # ggplot2::geom_sf(data = shp_all$graticule, 
+  #         linetype = "dashed",
+  #         mapping = aes(geometry = geometry))  +
+  ggplot2::geom_sf(data = shp_all$akland,
+          mapping = aes(geometry = geometry), 
+          fill = "grey50",
+          color = "transparent", 
+          alpha = 0.5) + 
+  ggplot2::geom_sf(data = shp_all$survey.grid %>% 
+            dplyr::filter(is.na(comment)),
+          alpha = .5, 
+          color = "green",
+          mapping = aes(geometry = geometry))  +
+  ggplot2::geom_sf(data = shp_all$survey.strata,
+          mapping = aes(geometry = geometry), 
+          color = "blue",
+          alpha = 0.5)  +
+  ggplot2::ggplot:: geom_sf(data = shp_all$survey.area,
+          mapping = aes(geometry = geometry, 
+                        fill = SRVY), 
+          color = "red", 
+          alpha = 0.15, 
+          show.legend = FALSE)  +
+  # ggplot2::geom_sf(data = shp_all$place.labels,
+  #         mapping = aes(geometry = geometry, 
+  #                       color = type)) +
+  ggplot2::geom_sf_text(data = shp_all$place.labels,
+               mapping = aes(geometry = geometry, 
+                             angle = angle,
+                             # color = type,
+                             label = lab), 
+               color = "black",
+               show.legend = FALSE) +
+  ggplot2::scale_x_continuous(name = "Longitude",
+                              breaks = shp_all$lon.breaks,
+                              limits = c(sf::st_bbox(shp_all$survey.area)$xmin, 
+                                         sf::st_bbox(shp_all$survey.area)$xmax)) +
+  ggplot2::scale_y_continuous(name = "Latitude",
+                              breaks = shp_all$lat.breaks,
+                              limits = c(sf::st_bbox(shp_all$survey.area)$ymin, 
+                                         sf::st_bbox(shp_all$survey.area)$ymax)) + 
+  ggplot2::theme_bw()  + 
+  ggplot2::theme(
+    panel.border = element_rect(colour = "grey50", fill=NA, linewidth=.5), 
+    plot.margin=unit(c(0,0,0,0), "cm") , 
+    panel.background = element_rect(fill = "white"), #grey95
+    panel.grid = element_line(colour="grey80", linewidth = 0.5), 
+    legend.position="bottom",
+    legend.direction="horizontal",
+    legend.justification="left",
+    legend.background = element_blank(),
+    legend.box.background = element_blank())
+
+# figure0
+
+ggplot2::ggsave(filename = here::here("data", "test_all.png"), 
+                plot = figure0, 
+                height = 6, 
+                width = 6)
+
+}
