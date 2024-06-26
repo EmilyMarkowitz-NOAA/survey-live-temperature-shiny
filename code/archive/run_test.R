@@ -101,7 +101,7 @@ if (googledrive_dl) {
 }
 show_planned_stations <- FALSE
 survey_area <- shp_goa
-# survey_area <- shp_surv[shp_surv$SRVY == "GOA"]
+# survey_area <- shp_all$survey.area[shp_all$survey.area$SRVY == "GOA"]
 if(ftp_dl){ftp$dest <- dev_goa}
 
 make_varplot_wrapper(maxyr = maxyr, 
@@ -135,7 +135,7 @@ if (googledrive_dl) {
 show_planned_stations <- TRUE
 plot_anom <- TRUE
 survey_area <- shp_bs
-# survey_area <- shp_surv[shp_surv$SRVY %in% "NEBS"]
+# survey_area <- shp_all$survey.area[shp_all$survey.area$SRVY %in% "NEBS"]
 
 if(ftp_dl){ftp$dest <- dev_bs}
 
@@ -170,7 +170,7 @@ if (googledrive_dl) {
 plot_anom <- FALSE
 show_planned_stations <- FALSE
 survey_area <- shp_ai
-# survey_area <- shp_surv[shp_surv$SRVY == "AI"]
+# survey_area <- shp_all$survey.area[shp_all$survey.area$SRVY == "AI"]
 
 if(ftp_dl){ftp$dest <- dev_ai}
 
