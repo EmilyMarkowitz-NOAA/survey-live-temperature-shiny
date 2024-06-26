@@ -666,7 +666,7 @@ shp_all$place.labels = shp_ebs$place.labels %>%
                      dplyr::rename(latitude_dd = Y, 
                                    longitude_dd = X)) 
 
-### Pretty plot ----------------------------------------------------------------
+### Place names ----------------------------------------------------------------
 
 shp_all$place.labels = data.frame(
   type = c("islands", "islands", "islands", "islands", 
@@ -700,7 +700,7 @@ shp_all$place.labels = data.frame(
 
 # Save shapefile ---------------------------------------------------------------
 
-save(areas, file = here::here("data", "shp1.rdata"))
+save(shp_all, file = here::here("data", "shp1.rdata"))
 
 
 
