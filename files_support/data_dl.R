@@ -248,7 +248,9 @@ if (file.exists("Z:/Projects/ConnectToOracle.R")) {
 
 locations<-c(
   "GAP_PRODUCTS.AKFIN_AREA",
-  "GAP_PRODUCTS.AKFIN_STRATUM_GROUPS"
+  "GAP_PRODUCTS.AKFIN_STRATUM_GROUPS", 
+  "GAP_PRODUCTS.AKFIN_HAUL",
+  "GAP_PRODUCTS.AKFIN_CRUISE"
 )
 
 error_loading <- c()
@@ -292,10 +294,94 @@ for (i in 1:length(locations)){
 }
 error_loading
 
-crs.out <- "EPSG:3338"
+# Wrangle data -----------------------------------------------------------------
+
+# Wrangle gap_products tables to bind to shapefiles
+
+# Find the correct design year to use for each survey
+
+maxyr <- format(Sys.Date(), format = "%Y")
+
+dat_design_year <- gap_products_akfin_area0 %>% 
+  dplyr::filter(design_year <= maxyr) %>% 
+  dplyr::group_by(survey_definition_id) %>% 
+  dplyr::summarise(design_year = max(design_year, na.rm = TRUE)) 
+
+# Summarize stratums for each survey
+
+dat_areas <- gap_products_akfin_area0  %>% 
+  # find the most up to date design_year's
+  dplyr::filter(
+    eval(parse(text=paste0(
+      "(survey_definition_id == ", dat_design_year$survey_definition_id, 
+      " & ", "design_year == ", dat_design_year$design_year, ") ", 
+      collapse = " | ")))) %>%
+  # dplyr::filter((survey_definition_id %in% c(52, 47) & area_type %in% c("INPFC", "STRATUM")) | 
+  #                 (survey_definition_id %in% c(143, 98, 78) & area_type == "STRATUM")) %>% 
+  dplyr::filter(area_type %in% c("STRATUM", "INPFC")) %>% 
+  dplyr::mutate(#area_name = stringr::str_to_title(inpfc_area),
+    area_name = dplyr::case_when(
+      area_name %in% c("Western Aleutians", "Chirikof") ~ "Western Aleutians",
+      TRUE ~ area_name)
+  ) %>% 
+  dplyr::select(survey_definition_id, area_id, area_type, area_name, design_year) 
+
+dat_areas <- dplyr::bind_rows(
+  dat_areas %>% 
+    dplyr::mutate(stratum = area_id) %>%
+    dplyr::filter(!(survey_definition_id %in% c(47, 52)) & 
+                    area_type == "STRATUM"), 
+  gap_products_akfin_stratum_groups0 %>% 
+    dplyr::filter(
+      eval(parse(text=paste0(
+        "(survey_definition_id == ", dat_design_year$survey_definition_id, 
+        " & ", "design_year == ", dat_design_year$design_year, ") ", 
+        collapse = " | ")))) %>%
+    dplyr::filter(survey_definition_id %in% c(52, 47)) %>% 
+    dplyr::filter(area_id %in% 
+                    unique(dat_areas$area_id[dat_areas$area_type == "INPFC"])) %>%
+    # dplyr::select(-design_year) %>% 
+    dplyr::left_join(dat_areas %>% 
+                       dplyr::filter(area_type == "INPFC") )) 
+
+# Summarize stratums and stations for each survey
+# 
+# Because there is no nice, wholistic gap_products.stations (or similar) table, I need to summarize this from the the haul table. Hoping to create a stations table in the next round of gap_products dev. 
+
+dat_survey_design <- dplyr::left_join(
+  gap_products_akfin_haul0 %>% 
+    dplyr::select(station, stratum, cruisejoin) %>% 
+    dplyr::distinct(), 
+  gap_products_akfin_cruise0 %>% 
+    dplyr::select(survey_definition_id, survey_name, cruisejoin) %>% 
+    dplyr::distinct()) %>% 
+  dplyr::select(-cruisejoin) %>% 
+  dplyr::distinct() %>%
+  dplyr::left_join(dat_areas) %>%
+  dplyr::mutate(
+    SRVY = dplyr::case_when(
+      survey_definition_id == 98 ~ "EBS",
+      survey_definition_id == 143 ~ "NBS",
+      survey_definition_id == 78 ~ "BSS",
+      survey_definition_id == 47 ~ "GOA",
+      survey_definition_id == 52 ~ "AI"))
+head(dat_survey_design) %>% 
+  flextable::flextable() %>% 
+  flextable::theme_zebra() %>% 
+  flextable::width(width = nrow(dat_survey_design)/6.5)
+
+# Load shapefiles --------------------------------------------------------------
+
+# Pull available shape data for each survey from `akgfmaps`
+
+crs_out <- "EPSG:3338"
 
 shp_bs <- akgfmaps::get_base_layers(select.region = "bs.all", set.crs = "auto")
+shp_bs_c <- akgfmaps::get_base_layers(select.region = "bs.all", set.crs = "auto", 
+                                      include.corners = TRUE)
 shp_ebs <- akgfmaps::get_base_layers(select.region = "bs.south", set.crs = "auto")
+shp_ebs_c <- akgfmaps::get_base_layers(select.region = "bs.south", set.crs = "auto", 
+                                       include.corners = TRUE)
 shp_nbs <- akgfmaps::get_base_layers(select.region = "bs.north", set.crs = "auto")
 shp_ai <- akgfmaps::get_base_layers(select.region = "ai", set.crs = "auto")
 shp_ai$survey.strata$Stratum <- shp_ai$survey.strata$STRATUM
@@ -303,260 +389,319 @@ shp_goa <- akgfmaps::get_base_layers(select.region = "goa", set.crs = "auto")
 shp_goa$survey.strata$Stratum <- shp_goa$survey.strata$STRATUM
 shp_bss <- akgfmaps::get_base_layers(select.region = "ebs.slope", set.crs = "auto")
 
-aa <- gap_products_akfin_area0 %>% 
-  dplyr::filter(design_year <= maxyr) %>% 
-  dplyr::group_by(survey_definition_id) %>% 
-  dplyr::summarise(design_year = max(design_year, na.rm = TRUE)) 
+## Everything will be saved in this `shp_all` object
+# 
+# Wrangle shapefiles together so they are in the same object, and have the same column/row properties
+# 
+# - Here, I am removing the bs.all specific stuff (where I can) because I am hoping it is redundant to NBS and EBS unioned, and can just be selected together by the user
 
-areas <- gap_products_akfin_area0  %>% 
-  # find the most up to date design_year's
-  dplyr::filter(eval(parse(text=paste0("(survey_definition_id == ", aa$survey_definition_id, 
-                                       " & ", "design_year == ", aa$design_year, ") ", collapse = " | ")))) %>%
-  # dplyr::filter((survey_definition_id %in% c(52, 47) & area_type %in% c("INPFC", "STRATUM")) | 
-  #                 (survey_definition_id %in% c(143, 98, 78) & area_type == "STRATUM")) %>% 
-  dplyr::filter(area_type %in% c("STRATUM", "INPFC")) %>% 
-  dplyr::mutate(#area_name = stringr::str_to_title(inpfc_area),
-    area_name = dplyr::case_when(
-      area_name %in% c("Western Aleutians", "Chirikof") ~ "Western Aleutians",
-      TRUE ~ area_name)#, 
-    # SRVY = dplyr::case_when(
-    #   survey_definition_id == 98 ~ "EBS", 
-    #   survey_definition_id == 143 ~ "NBS", 
-    #   survey_definition_id == 78 ~ "BSS",
-    #   survey_definition_id == 47 ~ "GOA", 
-    #   survey_definition_id == 52 ~ "AI")
-  ) %>% 
-  dplyr::select(survey_definition_id, area_id, area_type, area_name) 
 
-areas <- dplyr::bind_rows(
-  areas %>% 
-    dplyr::mutate(stratum = area_id) %>%
-    dplyr::filter(!(survey_definition_id %in% c(47, 52)) & 
-                    area_type == "STRATUM"), 
-  gap_products_akfin_stratum_groups0 %>% 
-    dplyr::filter(eval(parse(text=paste0("(survey_definition_id == ", aa$survey_definition_id, 
-                                         " & ", "design_year == ", aa$design_year, ") ", collapse = " | ")))) %>%
-    dplyr::filter(survey_definition_id %in% c(52, 47)) %>% 
-    dplyr::filter(area_id %in% unique(areas$area_id[areas$area_type == "INPFC"])) %>%
-    dplyr::select(-design_year) %>% 
-    dplyr::left_join(areas %>% 
-                       dplyr::filter(area_type == "INPFC") ))  
+## Survey plot lat and lon breaks (list) ---------------------------------------
 
-shp_all <- shp <- list(
-  # Stratum
-  survey.strata = dplyr::bind_rows(list(
-    shp_bs$survey.strata %>%
-      sf::st_transform(crs = "EPSG:3338") %>%
-      dplyr::mutate(SRVY = "BS", 
-                    survey_definition_id = ifelse(SURVEY == "EBS_SHELF", 98, 143),
-                    stratum = as.numeric(Stratum)) %>% 
-      dplyr::select(-Stratum),
-    shp_ebs$survey.strata %>%
-      sf::st_transform(crs = "EPSG:3338") %>%
-      dplyr::mutate(SRVY = "EBS", 
-                    survey_definition_id = 98,
-                    stratum = as.numeric(Stratum)) %>% 
-      dplyr::select(-Stratum),
-    shp_nbs$survey.strata  %>%
-      sf::st_transform(crs = "EPSG:3338") %>%
-      dplyr::mutate(survey = "NBS", 
-                    survey_definition_id = 143,
-                    stratum = as.numeric(Stratum)) %>% 
-      dplyr::select(-Stratum),
-    shp_ai$survey.strata %>%
-      sf::st_transform(crs = "EPSG:3338") %>%
-      dplyr::mutate(SRVY = "AI", 
-                    survey_definition_id = 52,
-                    stratum = as.numeric(STRATUM)) %>% 
-      dplyr::select(-STRATUM),
-    shp_goa$survey.strata %>%
-      sf::st_transform(crs = "EPSG:3338") %>%
-      dplyr::mutate(SRVY = "GOA",
-                    survey_definition_id = 47,
-                    stratum = as.numeric(STRATUM)) %>% 
-      dplyr::select(-STRATUM, -Stratum),
-    shp_bss$survey.strata %>%
-      sf::st_transform(crs = "EPSG:3338") %>%
-      dplyr::mutate(SRVY = "BSS", 
-                    survey_definition_id = 78,
-                    stratum = as.numeric(STRATUM)) %>% 
-      dplyr::select(-STRATUM))) %>%
-    dplyr::select(SRVY, survey_definition_id, stratum, geometry) %>%
-    # dplyr::left_join(y = dat_survey %>%
-    #                    dplyr::select(stratum, SRVY, survey, survey, survey_definition_id) %>% 
-    #                    dplyr::distinct()) %>% 
-    dplyr::left_join(y = areas, relationship = "many-to-many"), 
+# > This is shared across all survey areas. For plotting purposes, you don't actually need survey-specific breaks. You can provide as many breaks as you want and it will match the appropriate break and spot
+# 
+# > A case could be made that this is not necesary to include in the object, but it also doesn't hurt to have. 
+
+shp_all <- list()
+
+shp_all$lon.breaks <- c(160, 165, 170,  175, -180, -175, -170, -165, -160, -155, -150, -145, -140, -135, -130, -125, -120)
+shp_all$lat.breaks <- seq(from = 40, to = 70, by = 2)
+
+## Land (polygons) -------------------------------------------------------------
+
+shp_all$akland <- shp_bs$akland %>%
+  sf::st_transform(crs = crs_out) %>% 
+  dplyr::rename(name = DESC_)
+
+shp_all$akland$name[2] <- "Alaska"
+
+## Survey area (polygons) ------------------------------------------------------
+
+shp$survey.area <- dplyr::bind_rows(list(
+  ## removing the bs.all because I am hoping it is redundant to NBS and EBS unioned, 
+  ## and can just be selected together by the user
+  # shp_bs$survey.area %>%
+  #   sf::st_transform(crs = crs_out) %>%
+  #   dplyr::mutate(SRVY = "BS", 
+  #                 comment = ifelse(SURVEY == "EBS_SHELF", "EBS", "NBS")),
+  shp_ebs$survey.area %>%
+    sf::st_transform(crs = crs_out) %>%
+    dplyr::mutate(SRVY = "EBS"),
+  shp_nbs$survey.area  %>%
+    sf::st_transform(crs = crs_out) %>%
+    dplyr::mutate(SRVY = "NBS"),
+  shp_ai$survey.area %>%
+    sf::st_transform(crs = crs_out) %>%
+    dplyr::mutate(SRVY = "AI"),
+  shp_goa$survey.area %>%
+    sf::st_transform(crs = crs_out) %>%
+    dplyr::mutate(SRVY = "GOA"),
+  shp_bss$survey.area %>%
+    sf::st_transform(crs = crs_out) %>%
+    dplyr::mutate(SRVY = "BSS"))) %>%
+  dplyr::select(SRVY, #comment, 
+                geometry)  %>%
+  dplyr::left_join(
+    y = dat_survey_design %>%
+      dplyr::select(survey_definition_id, SRVY, design_year) %>% # because EBS and NBS can just be called together
+      dplyr::distinct()) %>% 
+  dplyr::relocate(survey_definition_id, SRVY)
+
+## Graticules (line) -----------------------------------------------------------
+
+temp <- dplyr::bind_rows(list(
+  shp_bs$graticule %>%
+    sf::st_transform(crs = crs_out), 
+  shp_goa$graticule %>%
+    sf::st_transform(crs = crs_out), 
+  shp_ai$graticule %>%
+    sf::st_transform(crs = crs_out))) %>% 
+  dplyr::select(degree, type, degree_label, angle_start, angle_end, geometry) %>%
+  dplyr::distinct() %>% 
+  dplyr::arrange(degree)
+
+# find duplicates
+temp0 <- c()
+for (i in unique(temp$degree)) {
+  temp0 <- dplyr::bind_rows(
+    temp0, 
+    temp %>% 
+      dplyr::filter(degree == i) %>% 
+      head(1)) # take first of duplicate
+}
+
+shp$graticule <- temp0
+
+## Survey strata (polygons) ----------------------------------------------------
+
+# Stratum
+shp$survey.strata <- dplyr::bind_rows(list(
+  ## removing the bs.all because I am hoping it is redundant to NBS and EBS unioned, 
+  ## and can just be selected together by the user
+  # shp_bs_c$survey.strata %>%
+  #   sf::st_transform(crs = crs_out) %>%
+  #   dplyr::mutate(SRVY = "BS",
+  #                 comment = "corner",
+  #                 survey_definition_id = ifelse(SURVEY == "EBS_SHELF", 98, 143),
+  #                 stratum = as.numeric(Stratum)) %>% 
+  #   dplyr::select(-Stratum),
+  # shp_bs$survey.strata %>%
+  #   sf::st_transform(crs = crs_out) %>%
+  #   dplyr::mutate(SRVY = "BS", 
+  #                 survey_definition_id = ifelse(SURVEY == "EBS_SHELF", 98, 143),
+  #                 stratum = as.numeric(Stratum)) %>% 
+  # dplyr::select(-Stratum),
+  # shp_ebs_c$survey.strata %>%
+  #   sf::st_transform(crs = crs_out) %>%
+  #   dplyr::mutate(SRVY = "EBS",
+  #                 comment = "corner", 
+  #                 survey_definition_id = 98,
+  #                 stratum = as.numeric(Stratum)) %>% 
+  #   dplyr::select(-Stratum),
+  shp_ebs$survey.strata %>%
+    sf::st_transform(crs = crs_out) %>%
+    dplyr::mutate(SRVY = "EBS", 
+                  survey_definition_id = 98,
+                  stratum = as.numeric(Stratum)) %>% 
+    dplyr::select(-Stratum),
+  shp_nbs$survey.strata  %>%
+    sf::st_transform(crs = crs_out) %>%
+    dplyr::mutate(SRVY = "NBS", 
+                  survey_definition_id = 143,
+                  stratum = as.numeric(Stratum)) %>% 
+    dplyr::select(-Stratum),
+  shp_ai$survey.strata %>%
+    sf::st_transform(crs = crs_out) %>%
+    dplyr::mutate(SRVY = "AI", 
+                  survey_definition_id = 52,
+                  stratum = as.numeric(STRATUM)) %>% 
+    dplyr::select(-STRATUM),
+  shp_goa$survey.strata %>%
+    sf::st_transform(crs = crs_out) %>%
+    dplyr::mutate(SRVY = "GOA",
+                  survey_definition_id = 47,
+                  stratum = as.numeric(STRATUM)) %>% 
+    dplyr::select(-STRATUM, -Stratum),
+  shp_bss$survey.strata %>%
+    sf::st_transform(crs = crs_out) %>%
+    dplyr::mutate(SRVY = "BSS", 
+                  survey_definition_id = 78,
+                  stratum = as.numeric(STRATUM)) %>% 
+    dplyr::select(-STRATUM))) %>%
+  dplyr::select(SRVY, survey_definition_id, area_id = stratum, geometry) %>%
+  # dplyr::left_join(y = dat_survey_design %>%
+  #                    dplyr::select(stratum, SRVY, survey, survey, survey_definition_id) %>% 
+  #                    dplyr::distinct()) %>% 
+  dplyr::left_join(y = dat_areas) %>% # , relationship = "many-to-many"
+  dplyr::relocate(survey_definition_id, SRVY)
+
+# Viz
+x <- shp$survey.strata
+
+## Survey station grids (polygon) ----------------------------------------------
+
+shp$survey.grid <- dplyr::bind_rows(list(
   
-  # Regions
-  survey.area = dplyr::bind_rows(list(
-    shp_bs$survey.area %>%
-      sf::st_transform(crs = "EPSG:3338") %>%
-      dplyr::mutate(SRVY = "BS", 
-                    SRVY1 = ifelse(SURVEY == "EBS_SHELF", "EBS", "NBS")),
-    shp_ebs$survey.area %>%
-      sf::st_transform(crs = "EPSG:3338") %>%
-      dplyr::mutate(SRVY = "EBS"),
-    shp_nbs$survey.area  %>%
-      sf::st_transform(crs = "EPSG:3338") %>%
-      dplyr::mutate(SRVY = "NBS"),
-    shp_ai$survey.area %>%
-      sf::st_transform(crs = "EPSG:3338") %>%
-      dplyr::mutate(SRVY = "AI"),
-    shp_goa$survey.area %>%
-      sf::st_transform(crs = "EPSG:3338") %>%
-      dplyr::mutate(SRVY = "GOA"),
-    shp_bss$survey.area %>%
-      sf::st_transform(crs = "EPSG:3338") %>%
-      dplyr::mutate(SRVY = "BSS"))) %>%
-    dplyr::select(SRVY, SRVY1, geometry), #  %>%
-  # dplyr::left_join(y = dat_survey %>%
-  #                    dplyr::select(SRVY, survey, survey, survey_definition_id) %>% 
-  #                    dplyr::distinct()), 
+  ## removing the bs.all because I am hoping it is redundant to NBS and EBS unioned, 
+  ## and can just be selected together by the user
   
-  # Stations
-  survey.grid = dplyr::bind_rows(list(
-    shp_bs$survey.grid %>%
-      sf::st_transform(crs = "EPSG:3338") %>%
-      dplyr::mutate(SRVY = "BS", 
-                    station = STATIONID) %>% 
-      dplyr::left_join(y = dat_survey %>% 
-                         dplyr::filter(SRVY %in% c("EBS", "NBS")) %>% 
-                         dplyr::select(station, stratum, survey_definition_id) %>% 
-                         dplyr::distinct()),
-    shp_ebs$survey.grid %>%
-      sf::st_transform(crs = "EPSG:3338") %>%
-      dplyr::mutate(SRVY = "EBS", 
-                    station = STATIONID) %>% 
-      dplyr::left_join(y = dat_survey %>% 
-                         dplyr::filter(SRVY == "EBS") %>% 
-                         dplyr::select(SRVY, station, stratum, survey_definition_id) %>% 
-                         dplyr::distinct()),
-    shp_nbs$survey.grid  %>%
-      sf::st_transform(crs = "EPSG:3338") %>%
-      dplyr::mutate(SRVY = "NBS", 
-                    station = STATIONID) %>% 
-      dplyr::left_join(y = dat_survey %>% 
-                         dplyr::filter(SRVY == "NBS") %>% 
-                         dplyr::select(SRVY, station, stratum, survey_definition_id) %>% 
-                         dplyr::distinct()),
-    shp_ai$survey.grid %>%
-      sf::st_transform(crs = "EPSG:3338") %>%
-      dplyr::mutate(SRVY = "AI", 
-                    survey_definition_id = 52, 
-                    station = ID, 
-                    stratum = STRATUM) %>% 
-      dplyr::left_join(y = dat_survey %>% 
-                         dplyr::filter(SRVY == "AI") %>% 
-                         dplyr::select(SRVY, station, stratum) %>% 
-                         dplyr::distinct()),
-    shp_goa$survey.grid %>%
-      sf::st_transform(crs = "EPSG:3338") %>%
-      dplyr::mutate(SRVY = "GOA", 
-                    survey_definition_id = 47, 
-                    station = ID, 
-                    stratum = STRATUM) %>% 
-      dplyr::left_join(y = dat_survey %>% 
-                         dplyr::filter(SRVY == "GOA") %>% 
-                         dplyr::select(SRVY, station, stratum) %>% 
-                         dplyr::distinct())
-    # sf::st_transform(crs = "EPSG:3338") %>%
-    # dplyr::mutate(SRVY = "GOA",
-    #               station = ID, 
-    #               stratum = STRATUM) %>% 
-    # dplyr::left_join(y = dat_survey %>% 
-    #                    dplyr::filter(SRVY == "GOA") %>% 
-    #                    dplyr::select(SRVY, station, stratum, survey_definition_id) %>% 
-    #                    dplyr::distinct())
-  )) %>%
-    dplyr::select(SRVY, survey_definition_id, station, stratum, geometry) %>%
-    dplyr::left_join(y = areas, relationship = "many-to-many"), 
+  # shp_bs_c$survey.grid %>%
+  #   sf::st_transform(crs = crs_out) %>%
+  #   dplyr::mutate(SRVY = "BS", 
+  #                 comment = "corner",
+  #                 station = STATIONID) %>% 
+  #   dplyr::left_join(y = dat_survey_design %>% 
+  #                      dplyr::filter(survey_definition_id %in% c(98, 143)) %>% 
+  #                      dplyr::select(station, stratum, survey_definition_id) %>% 
+  #                      dplyr::distinct()),
+  # shp_bs$survey.grid %>%
+  #   sf::st_transform(crs = crs_out) %>%
+  #   dplyr::mutate(SRVY = "BS", 
+  #                 station = STATIONID) %>% 
+  #   dplyr::left_join(y = dat_survey_design %>% 
+  #                      dplyr::filter(survey_definition_id %in% c(98, 143)) %>% 
+  #                      dplyr::select(station, stratum, survey_definition_id) %>% 
+  #                      dplyr::distinct()),
   
-  # # plot.boundary
-  # plot.boundary = dplyr::bind_rows(list(
-  #   shp_bs$plot.boundary %>% 
-  #     dplyr::mutate(SRVY = "BS", 
-  #                   z = rownames(.)),
-  #   shp_ebs$plot.boundary %>% 
-  #     dplyr::mutate(SRVY = "EBS", 
-  #                   z = rownames(.)),
-  #   shp_nbs$plot.boundary %>% 
-  #     dplyr::mutate(SRVY = "NBS", 
-  #                   z = rownames(.)),
-  #   shp_bss$plot.boundary %>% 
-  #     dplyr::mutate(SRVY = "BSS", 
-  #                   z = rownames(.)),
-  #   shp_goa$plot.boundary %>% 
-  #     dplyr::mutate(SRVY = "GOA", 
-  #                   z = rownames(.)),
-  #   shp_ai$plot.boundary %>% 
-  #     dplyr::mutate(SRVY = "AI", 
-  #                   z = rownames(.))
-  # )), 
+  shp_ebs_c$survey.grid %>%
+    sf::st_transform(crs = crs_out) %>%
+    # dplyr::filter(STATIONID %in% setdiff(shp_ebs_c$survey.grid$STATIONID, shp_ebs$survey.grid$STATIONID)) %>% 
+    dplyr::mutate(SRVY = "EBS", 
+                  design_year = 2019, 
+                  comment = "corner",
+                  station = STATIONID) %>% 
+    dplyr::left_join(y = dat_survey_design %>% 
+                       dplyr::filter(survey_definition_id %in% c(98)) %>% 
+                       dplyr::select(SRVY, station, stratum, survey_definition_id) %>% 
+                       dplyr::distinct()),
+  shp_ebs$survey.grid %>%
+    sf::st_transform(crs = crs_out) %>%
+    dplyr::mutate(SRVY = "EBS", 
+                  station = STATIONID) %>% 
+    dplyr::left_join(y = dat_survey_design %>% 
+                       dplyr::filter(survey_definition_id %in% c(98)) %>% 
+                       dplyr::select(SRVY, station, stratum, survey_definition_id) %>% 
+                       dplyr::distinct()),
+  shp_nbs$survey.grid  %>%
+    sf::st_transform(crs = crs_out) %>%
+    dplyr::mutate(SRVY = "NBS", 
+                  station = STATIONID) %>% 
+    dplyr::left_join(y = dat_survey_design %>% 
+                       dplyr::filter(survey_definition_id %in% c(143)) %>% 
+                       dplyr::select(SRVY, station, stratum, survey_definition_id) %>% 
+                       dplyr::distinct()),
+  shp_ai$survey.grid %>%
+    sf::st_transform(crs = crs_out) %>%
+    dplyr::mutate(SRVY = "AI", 
+                  survey_definition_id = 52, 
+                  station = ID, 
+                  stratum = STRATUM) %>% 
+    dplyr::left_join(y = dat_survey_design %>% 
+                       dplyr::filter(survey_definition_id %in% c(52)) %>% 
+                       dplyr::select(SRVY, station, stratum) %>% 
+                       dplyr::distinct()),
+  shp_goa$survey.grid %>%
+    sf::st_transform(crs = crs_out) %>%
+    dplyr::mutate(SRVY = "GOA", 
+                  survey_definition_id = 47, 
+                  station = ID, 
+                  stratum = STRATUM) %>% 
+    dplyr::left_join(y = dat_survey_design %>% 
+                       dplyr::filter(survey_definition_id %in% 47) %>% 
+                       dplyr::select(SRVY, station, stratum) %>% 
+                       dplyr::distinct()))) %>% 
+  dplyr::select(survey_definition_id, SRVY, stratum, station, geometry, comment)  %>%
+  dplyr::left_join(y = dat_areas, relationship = "many-to-many")
+
+# Viz
+x <- shp$survey.grid
+
+## Ocean bathymetry (lines) ----------------------------------------------------
+
+shp_all$bathymetry <- dplyr::bind_rows(list(
+  shp_bs$bathymetry %>% 
+    dplyr::mutate(SRVY = "BS") %>%
+    sf::st_transform(crs = crs_out),
+  shp_ebs$bathymetry %>% 
+    dplyr::mutate(SRVY = "EBS") %>%
+    sf::st_transform(crs = crs_out),
+  shp_nbs$bathymetry %>% 
+    dplyr::mutate(SRVY = "NBS") %>%
+    sf::st_transform(crs = crs_out),
+  shp_bss$bathymetry %>% 
+    dplyr::mutate(SRVY = "BSS") %>%
+    sf::st_transform(crs = crs_out),
+  shp_goa$bathymetry %>% 
+    dplyr::mutate(SRVY = "GOA") %>%
+    sf::st_transform(crs = crs_out),
+  shp_ai$bathymetry %>% 
+    dplyr::mutate(SRVY = "AI") %>%
+    sf::st_transform(crs = crs_out)
+)) %>% 
+  dplyr::select(geometry, SRVY, meters = METERS) %>% 
+  dplyr::left_join(y = dat_survey_design %>%
+                     dplyr::select(SRVY, survey_definition_id) %>%
+                     dplyr::distinct()) 
+
+# Assuming they bathymetry feature can be shared across surveys, I would summarize this feature like this: 
+shp_all$bathymetry <- shp_all$bathymetry %>% 
+  dplyr::select(-SRVY, -survey_definition_id) %>% 
+  dplyr::distinct() %>%
+  sf::st_union(by_feature = TRUE)
+
+## Plot lables (data.frame) ----------------------------------------------------
+
+shp$place.labels = shp_ebs$place.labels %>% 
+  dplyr::mutate(angle = ifelse(lab == "U.S.-Russia Maritime Boundary", 45, 0)) %>% 
+  sf::st_as_sf(coords = c("x", "y"),
+               remove = FALSE,
+               crs = crs_out) %>% 
+  dplyr::select(-x, -y, -region) %>%
   
-  # lon.breaks
-  lon.breaks = list(
-    "BS" = shp_bs$lon.breaks,
-    "EBS" = shp_ebs$lon.breaks,
-    "NBS" = shp_nbs$lon.breaks,
-    "BSS" = shp_bss$lon.breaks,
-    "GOA" = shp_goa$lon.breaks,
-    "AI" = shp_ai$lon.breaks
-  ), 
-  
-  # lat.breaks
-  lat.breaks = list(
-    "BS" = shp_bs$lat.breaks,
-    "EBS" = shp_ebs$lat.breaks,
-    "NBS" = shp_nbs$lat.breaks,
-    "BSS" = shp_bss$lat.breaks,
-    "GOA" = shp_goa$lat.breaks,
-    "AI" = shp_ai$lat.breaks
-  ), 
-  
-  # bathymetry
-  bathymetry = dplyr::bind_rows(list(
-    shp_bs$bathymetry %>% 
-      dplyr::mutate(SRVY = "BS") %>%
-      sf::st_transform(crs = "EPSG:3338"),
-    shp_ebs$bathymetry %>% 
-      dplyr::mutate(SRVY = "EBS") %>%
-      sf::st_transform(crs = "EPSG:3338"),
-    shp_nbs$bathymetry %>% 
-      dplyr::mutate(SRVY = "NBS") %>%
-      sf::st_transform(crs = "EPSG:3338"),
-    shp_bss$bathymetry %>% 
-      dplyr::mutate(SRVY = "BSS") %>%
-      sf::st_transform(crs = "EPSG:3338"),
-    shp_goa$bathymetry %>% 
-      dplyr::mutate(SRVY = "GOA") %>%
-      sf::st_transform(crs = "EPSG:3338"),
-    shp_ai$bathymetry %>% 
-      dplyr::mutate(SRVY = "AI") %>%
-      sf::st_transform(crs = "EPSG:3338")
-  )) %>% 
-    dplyr::select(geometry, SRVY, meters = METERS),
-  
-  # place labels
-  place.labels = dplyr::bind_rows(list(
-    data.frame(type = "bathymetry", 
-               lab = c("50 m", "100 m", "200 m"), 
-               x = c(-168.122, -172.736, -174.714527), 
-               y = c(58.527, 58.2857, 58.504532), 
-               SRVY = "BS") %>%
-      sf::st_as_sf(coords = c("x", "y"), 
-                   remove = FALSE,  
-                   crs = "+proj=longlat") %>%
-      sf::st_transform(crs = "EPSG:3338"), 
-    data.frame(type = "bathymetry", 
-               lab = c("50 m", "100 m", "200 m"), 
-               x = c(-168, -172.5, -174.714527), 
-               y = c(58.527, 58.2857, 58.504532), 
-               SRVY = "EBS") %>%
-      sf::st_as_sf(coords = c("x", "y"), 
-                   remove = FALSE,  
-                   crs = "+proj=longlat") %>%
-      sf::st_transform(crs = "EPSG:3338")
-  )) )
+  # add lat lon for easy user-finding
+  dplyr::bind_cols(y = shp_ebs$place.labels %>% 
+                     sf::st_as_sf(coords = c("x", "y"),
+                                  remove = FALSE,
+                                  crs = crs_out) %>% 
+                     sf::st_transform(crs = "+proj=longlat") %>% 
+                     sf::st_coordinates() %>% 
+                     data.frame() %>% 
+                     dplyr::rename(latitude_dd = Y, 
+                                   longitude_dd = X)) 
+
+### Pretty plot ----------------------------------------------------------------
+
+shp$place.labels = data.frame(
+  type = c("islands", "islands", "islands", "islands", 
+           "mainland", "mainland", "mainland", 
+           "convention line", "peninsula", 
+           "survey", "survey", "survey", "survey", "survey", 
+           "bathymetry", "bathymetry", "bathymetry"), 
+  lab = c("Pribilof Isl.", "Nunivak", "St. Matthew", "St. Lawrence", 
+          "Alaska", "Russia", "Canada", 
+          "U.S.-Russia Maritime Boundary", "Alaska Peninsula", 
+          "Aleutian\nIslands", "Gulf of\nAlaska", 
+          "Bering\nSea\nSlope", "Eastern\nBering Sea", "Northern\nBering Sea", 
+          "200 m", "100 m", "50 m"), 
+  angle = c(0, 0, 0, 0, 0, 0, 0, 30, 45, 0, 0, 0, 0, 0, 0, 0, 0), 
+  latitude_dd = c(57.033348, 60.7, 61, 64.2, 
+                  62.296686, 62.798276, 63.722890, 
+                  62.319419, 56.352495, 
+                  50.651569, 58.034767, 
+                  56, 57.456912, 63.905936, 
+                  58.527, 58.2857, 58.504532), 
+  longitude_dd = c(-167.767168, -168, -174, -170.123016, 
+                   -157.377210, 173.205231, -136.664024, 
+                   -177.049063, -159.029430, 
+                   174, -144, 
+                   -176, -162, -165, 
+                   -168, -172.5, -174.714527)) %>%
+  sf::st_as_sf(coords = c("longitude_dd", "latitude_dd"), 
+               remove = FALSE,
+               crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>%
+  sf::st_transform(crs = crs_out) 
+
+# Save shapefile ---------------------------------------------------------------
 
 save(areas, file = here::here("data", "shp1.rdata"))
 
