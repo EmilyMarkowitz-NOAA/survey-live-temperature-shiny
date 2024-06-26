@@ -529,11 +529,12 @@ make_figure <- function(
     }
     
     if (virids_option == "H") {
-      var_color <- viridis::viridis_pal(option = virids_option)(length(var_labels))
+    var_color <- viridis::viridis_pal(option = virids_option)(length(var_labels))
     } else {
-      var_color <- viridis::viridis_pal(begin = 0.2, end = 0.9, option = virids_option)(length(var_labels))
-      # var_color <- viridis::viridis_pal(begin = 0.2, end = 0.9, option = "B")(length(var_labels))
+    var_color <- viridis::viridis_pal(begin = 0.2, end = 0.9, option = virids_option)(length(var_labels))
+    # var_color <- viridis::viridis_pal(begin = 0.2, end = 0.9, option = "B")(length(var_labels))
     }
+    
     # bin var
     dat <- dat %>%
       dplyr::mutate(var_bin = base::cut(x = as.numeric(dat$var),
