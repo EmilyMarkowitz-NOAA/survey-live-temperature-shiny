@@ -245,27 +245,10 @@ if (file.exists("Z:/Projects/ConnectToOracle.R")) {
                          believeNRows = FALSE)
 }
 
-# locations <- c(
-#   "RACEBASE_FOSS.JOIN_FOSS_CPUE_HAUL",
-#   "RACE_DATA.V_CRUISES",
-#   "GOA.GOA_STRATA"
-# )
 
 locations<-c(
-  # "GAP_PRODUCTS.AKFIN_CRUISE",
-  # "GAP_PRODUCTS.AKFIN_HAUL",
   "GAP_PRODUCTS.AKFIN_AREA",
-  "GAP_PRODUCTS.AKFIN_STRATUM_GROUPS"#,
-  # "RACE_DATA.CRUISES" # needed for survey start and end dates
-
-
-  # "AI.AIGRID_GIS",
-  # "GOA.GOA_STRATA",
-  # # "RACE_DATA.VESSELS",
-  # "RACE_DATA.V_CRUISES",
-  # # "RACEBASE.HAUL",
-  # # "RACE_DATA.V_CRUISES"
-  # "RACEBASE_FOSS.JOIN_FOSS_CPUE_HAUL"
+  "GAP_PRODUCTS.AKFIN_STRATUM_GROUPS"
 )
 
 error_loading <- c()
@@ -290,40 +273,26 @@ for (i in 1:length(locations)){
   if (is.null(nrow(a))) { # if (sum(grepl(pattern = "SQLExecDirect ", x = a))>1) {
     error_loading <- c(error_loading, locations[i])
   } else {
-    write.csv(x = a,
-              here::here("data",
-                         paste0(tolower(gsub(pattern = '.',
-                                             replacement = "_",
-                                             x = locations[i],
-                                             fixed = TRUE)),
-                                ".csv")))
+    
+    assign(x = paste0(tolower(gsub(pattern = '.',
+                                              replacement = "_",
+                                              x = locations[i],
+                                              fixed = TRUE)), "0"), 
+           value = a)
+    
+    # write.csv(x = a,
+    #           here::here("data",
+    #                      paste0(tolower(gsub(pattern = '.',
+    #                                          replacement = "_",
+    #                                          x = locations[i],
+    #                                          fixed = TRUE)),
+    #                             ".csv")))
   }
   remove(a)
 }
 error_loading
 
-
-a <- list.files(path = paste0(dir_wd, "data/"))
-# a <- a[grepl(pattern = ".", x = a, fixed = TRUE)] # remove folders
-a <- a[grepl(pattern = ".csv", x = a, fixed = TRUE)] # remove xlxsx
-for (i in 1:length(a)){
-  if (grepl(pattern = ".csv", x = a[i], fixed = TRUE)) {
-    b <- readr::read_csv(file = paste0(dir_wd, "data/", a[i]))
-    # } else if (grepl(pattern = ".xlsx", x = a[i], fixed = TRUE)) {
-    #   b <- readxl::read_xlsx(path = paste0(dir_wd, "data/")
-  }
-  b <- janitor::clean_names(b)
-  if (names(b)[1] %in% "x1"){
-    b$x1<-NULL
-  }
-  assign(x = gsub(
-    pattern = ifelse(grepl(pattern = ".csv", x = a[i], fixed = TRUE), ".csv", ".xlsx"), 
-    replacement = "", x = paste0(a[i], "0")), 
-    value = b)
-}
-
-
-crs.out <- shp_bs$survey_area$crs$input
+crs.out <- "EPSG:3338"
 
 shp_bs <- akgfmaps::get_base_layers(select.region = "bs.all", set.crs = "auto")
 shp_ebs <- akgfmaps::get_base_layers(select.region = "bs.south", set.crs = "auto")
