@@ -126,7 +126,7 @@ ui <- tabItem(
                 multiple = FALSE),
     selectInput(inputId = "survey", 
                 label = "Survey", 
-                choices = sort("NEBS", unique(shp_surv$SRVY)), 
+                choices = sort("NEBS", unique(shp_all$survey.area$SRVY)), 
                 selected = c("NEBS"), 
                 multiple = FALSE),
     div(class="outer",
@@ -150,7 +150,7 @@ server <- function(input, output, session) {
       plot_subtitle = "NOAA Fisheries Aleutian Islands Bottom Trawl Survey"
     }
 
-    survey_area <- shp_surv %>% 
+    survey_area <- shp_all$survey.area %>% 
       dplyr::filter(SRVY == input$survey)
 
       dir_googledrive_upload <- NULL

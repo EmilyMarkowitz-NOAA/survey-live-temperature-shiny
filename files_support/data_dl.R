@@ -93,7 +93,7 @@
 # 
 # ### survey area  ------------------------------------------------------------------------
 # 
-# shp_surv <- dplyr::bind_rows(list(
+# shp_all$survey.area <- dplyr::bind_rows(list(
 #   shp_ebs$survey.area %>% 
 #     sf::st_transform(crs = "EPSG:3338") %>% 
 #     dplyr::mutate(SRVY = "EBS"), 
@@ -204,7 +204,7 @@
 #                                    survey_long = paste0(survey, " Bottom Trawl Survey")), 
 #                    by = "SRVY")
 # 
-# save(shp_surv, shp_stn, shp_strat, file = here::here("data", "shp.rdata"))
+# save(shp_all$survey.area, shp_stn, shp_strat, file = here::here("data", "shp.rdata"))
 # 
 # 
 # #### NEW AND IMPROVDED, BUT NOT YET INTEGRATED ---------------------------------

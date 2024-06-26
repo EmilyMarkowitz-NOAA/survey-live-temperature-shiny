@@ -390,7 +390,7 @@ server <- function(input, output, session) {
                       SRVY %in% input$survey)
     
     pal <- colorNumeric(viridis(option = "G", n = 2, begin = .2, end = .8), 
-                        domain = shp_surv$survey_definition_id,
+                        domain = shp_all$survey.area$survey_definition_id,
                         na.color = "transparent")
     
     a <- leaflet(
@@ -412,7 +412,7 @@ server <- function(input, output, session) {
                   smoothFactor = 0.5,
                   label = ~paste(name),
                   labelOptions = labelOptions(direction = "auto")) %>%
-      addPolygons(data = shp_surv %>% 
+      addPolygons(data = shp_all$survey.area %>% 
                     dplyr::filter(SRVY %in% input$survey), 
                   weight = 1, 
                   color = "#444444", 
@@ -812,7 +812,7 @@ server <- function(input, output, session) {
                                       multiple = FALSE),
                           selectInput(inputId = "survey", 
                                       label = "Survey", 
-                                      choices = sort(unique(shp_surv$SRVY))[sort(unique(shp_surv$SRVY)) != "NEBS"], 
+                                      choices = sort(unique(shp_all$survey.area$SRVY))[sort(unique(shp_all$survey.area$SRVY)) != "NEBS"], 
                                       selected = c("EBS", "NBS"), 
                                       multiple = TRUE),
                           checkboxInput(inputId = "station", 

@@ -34,7 +34,7 @@ ui.surveymap <- function() {
                                     multiple = FALSE),
                         selectInput(inputId = "survey", 
                                     label = "Survey", 
-                                    choices = sort(unique(shp_surv$SRVY))[sort(unique(shp_surv$SRVY)) != "NEBS"], 
+                                    choices = sort(unique(shp_all$survey.area$SRVY))[sort(unique(shp_all$survey.area$SRVY)) != "NEBS"], 
                                     selected = c("EBS", "NBS"), 
                                     multiple = TRUE),
                         checkboxInput(inputId = "station", 
