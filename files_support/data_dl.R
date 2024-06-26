@@ -217,7 +217,7 @@
 
 # Connect to oracle ------------------------------------------------------------
 
-PKG <- c("magrittr", "readr", "dplyr")
+PKG <- c("magrittr", "readr", "dplyr", "janitor")
 
 for (p in PKG) {
   if(!require(p,character.only = TRUE)) {
@@ -227,7 +227,7 @@ for (p in PKG) {
 
 if (file.exists("Z:/Projects/ConnectToOracle.R")) {
   source("Z:/Projects/ConnectToOracle.R")
-  channel <- channel_products
+  channel <- channel
 } else { # For those without a ConnectToOracle file
   # # library(devtools)
   # # devtools::install_github("afsc-gap-products/gapindex")
@@ -280,7 +280,8 @@ for (i in 1:length(locations)){
                                               replacement = "_",
                                               x = locations[i],
                                               fixed = TRUE)), "0"), 
-           value = a)
+           value = a %>% 
+             janitor::clean_names())
     
     # write.csv(x = a,
     #           here::here("data",
@@ -300,7 +301,7 @@ error_loading
 
 # Find the correct design year to use for each survey
 
-maxyr <- format(Sys.Date(), format = "%Y")
+maxyr <- as.numeric(format(Sys.Date(), format = "%Y"))
 
 dat_design_year <- gap_products_akfin_area0 %>% 
   dplyr::filter(design_year <= maxyr) %>% 
