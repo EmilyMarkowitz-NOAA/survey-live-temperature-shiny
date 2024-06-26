@@ -213,98 +213,117 @@
 # 
 # 
 # 
-# # Download oracle data ----------------------------------------------------------
-# 
-# # Connect to oracle ------------------------------------------------------------
-# 
-# PKG <- c("magrittr", "readr", "dplyr")
-# 
-# for (p in PKG) {
-#   if(!require(p,character.only = TRUE)) {  
-#     install.packages(p, verbose = FALSE)
-#     require(p,character.only = TRUE)}
-# }
-# 
-# if (file.exists("Z:/Projects/ConnectToOracle.R")) {
-#   source("Z:/Projects/ConnectToOracle.R")
-#   channel <- channel_products
-# } else { # For those without a ConnectToOracle file
-#   # # library(devtools)
-#   # # devtools::install_github("afsc-gap-products/gapindex")
-#   # library(gapindex)
-#   # channel <- gapindex::get_connected()
-#   
-#   # or 
-#   
-#   library(rstudioapi)
-#   library(RODBC)
-#   channel <- odbcConnect(dsn = "AFSC", 
-#                          uid = rstudioapi::showPrompt(title = "Username", 
-#                                                       message = "Oracle Username", default = ""), 
-#                          pwd = rstudioapi::askForPassword("Enter Password"),
-#                          believeNRows = FALSE)
-# }
-# 
-# # locations <- c(
-# #   "RACEBASE_FOSS.JOIN_FOSS_CPUE_HAUL", 
-# #   "RACE_DATA.V_CRUISES", 
-# #   "GOA.GOA_STRATA"
-# # )
-# 
-# locations<-c(
-#   # "GAP_PRODUCTS.AKFIN_CRUISE",
-#   # "GAP_PRODUCTS.AKFIN_HAUL",
-#   "GAP_PRODUCTS.AKFIN_AREA",
-#   "GAP_PRODUCTS.AKFIN_STRATUM_GROUPS"#, 
-#   # "RACE_DATA.CRUISES" # needed for survey start and end dates
-#   
-#   
-#   # "AI.AIGRID_GIS",
-#   # "GOA.GOA_STRATA",
-#   # # "RACE_DATA.VESSELS", 
-#   # "RACE_DATA.V_CRUISES",
-#   # # "RACEBASE.HAUL", 
-#   # # "RACE_DATA.V_CRUISES"
-#   # "RACEBASE_FOSS.JOIN_FOSS_CPUE_HAUL"
-# )
-# 
-# error_loading <- c()
-# for (i in 1:length(locations)){
-#   print(locations[i])
-#   
-#   a <- RODBC::sqlQuery(channel = channel, 
-#                        query = paste0("SELECT *
-#     FROM ", locations[i], "
-#     FETCH FIRST 1 ROWS ONLY;"))
-#   
-#   end0 <- c()
-#   
-#   start0 <- ifelse(!("START_TIME" %in% names(a)), 
-#                    "*", 
-#                    paste0(paste0(names(a)[names(a) != "START_TIME"], sep = ",", collapse = " "),
-#                           " TO_CHAR(START_TIME,'MM/DD/YYYY HH24:MI:SS') START_TIME "))
-#   
-#   a <- RODBC::sqlQuery(channel = channel, 
-#                        query = paste0("SELECT ", start0, " FROM ", locations[i], end0, "; "))
-#   
-#   if (is.null(nrow(a))) { # if (sum(grepl(pattern = "SQLExecDirect ", x = a))>1) {
-#     error_loading <- c(error_loading, locations[i])
-#   } else {
-#     write.csv(x = a, 
-#               here::here("data",
-#                          paste0(tolower(gsub(pattern = '.', 
-#                                              replacement = "_", 
-#                                              x = locations[i], 
-#                                              fixed = TRUE)),
-#                                 ".csv")))
-#   }
-#   remove(a)
-# }
-# error_loading
-# 
-# 
+# Download oracle data ----------------------------------------------------------
 
-# crs.out <- shp_bs$survey_area$crs$input
+# Connect to oracle ------------------------------------------------------------
+
+PKG <- c("magrittr", "readr", "dplyr")
+
+for (p in PKG) {
+  if(!require(p,character.only = TRUE)) {
+    install.packages(p, verbose = FALSE)
+    require(p,character.only = TRUE)}
+}
+
+if (file.exists("Z:/Projects/ConnectToOracle.R")) {
+  source("Z:/Projects/ConnectToOracle.R")
+  channel <- channel_products
+} else { # For those without a ConnectToOracle file
+  # # library(devtools)
+  # # devtools::install_github("afsc-gap-products/gapindex")
+  # library(gapindex)
+  # channel <- gapindex::get_connected()
+
+  # or
+
+  library(rstudioapi)
+  library(RODBC)
+  channel <- odbcConnect(dsn = "AFSC",
+                         uid = rstudioapi::showPrompt(title = "Username",
+                                                      message = "Oracle Username", default = ""),
+                         pwd = rstudioapi::askForPassword("Enter Password"),
+                         believeNRows = FALSE)
+}
+
+# locations <- c(
+#   "RACEBASE_FOSS.JOIN_FOSS_CPUE_HAUL",
+#   "RACE_DATA.V_CRUISES",
+#   "GOA.GOA_STRATA"
+# )
+
+locations<-c(
+  # "GAP_PRODUCTS.AKFIN_CRUISE",
+  # "GAP_PRODUCTS.AKFIN_HAUL",
+  "GAP_PRODUCTS.AKFIN_AREA",
+  "GAP_PRODUCTS.AKFIN_STRATUM_GROUPS"#,
+  # "RACE_DATA.CRUISES" # needed for survey start and end dates
+
+
+  # "AI.AIGRID_GIS",
+  # "GOA.GOA_STRATA",
+  # # "RACE_DATA.VESSELS",
+  # "RACE_DATA.V_CRUISES",
+  # # "RACEBASE.HAUL",
+  # # "RACE_DATA.V_CRUISES"
+  # "RACEBASE_FOSS.JOIN_FOSS_CPUE_HAUL"
+)
+
+error_loading <- c()
+for (i in 1:length(locations)){
+  print(locations[i])
+
+  a <- RODBC::sqlQuery(channel = channel,
+                       query = paste0("SELECT *
+    FROM ", locations[i], "
+    FETCH FIRST 1 ROWS ONLY;"))
+
+  end0 <- c()
+
+  start0 <- ifelse(!("START_TIME" %in% names(a)),
+                   "*",
+                   paste0(paste0(names(a)[names(a) != "START_TIME"], sep = ",", collapse = " "),
+                          " TO_CHAR(START_TIME,'MM/DD/YYYY HH24:MI:SS') START_TIME "))
+
+  a <- RODBC::sqlQuery(channel = channel,
+                       query = paste0("SELECT ", start0, " FROM ", locations[i], end0, "; "))
+
+  if (is.null(nrow(a))) { # if (sum(grepl(pattern = "SQLExecDirect ", x = a))>1) {
+    error_loading <- c(error_loading, locations[i])
+  } else {
+    write.csv(x = a,
+              here::here("data",
+                         paste0(tolower(gsub(pattern = '.',
+                                             replacement = "_",
+                                             x = locations[i],
+                                             fixed = TRUE)),
+                                ".csv")))
+  }
+  remove(a)
+}
+error_loading
+
+
+a <- list.files(path = paste0(dir_wd, "data/"))
+# a <- a[grepl(pattern = ".", x = a, fixed = TRUE)] # remove folders
+a <- a[grepl(pattern = ".csv", x = a, fixed = TRUE)] # remove xlxsx
+for (i in 1:length(a)){
+  if (grepl(pattern = ".csv", x = a[i], fixed = TRUE)) {
+    b <- readr::read_csv(file = paste0(dir_wd, "data/", a[i]))
+    # } else if (grepl(pattern = ".xlsx", x = a[i], fixed = TRUE)) {
+    #   b <- readxl::read_xlsx(path = paste0(dir_wd, "data/")
+  }
+  b <- janitor::clean_names(b)
+  if (names(b)[1] %in% "x1"){
+    b$x1<-NULL
+  }
+  assign(x = gsub(
+    pattern = ifelse(grepl(pattern = ".csv", x = a[i], fixed = TRUE), ".csv", ".xlsx"), 
+    replacement = "", x = paste0(a[i], "0")), 
+    value = b)
+}
+
+
+crs.out <- shp_bs$survey_area$crs$input
 
 shp_bs <- akgfmaps::get_base_layers(select.region = "bs.all", set.crs = "auto")
 shp_ebs <- akgfmaps::get_base_layers(select.region = "bs.south", set.crs = "auto")
