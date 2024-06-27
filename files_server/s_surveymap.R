@@ -1,12 +1,13 @@
-
-
 find_coldpool <- function(input) {
   r <- NULL
   r0 <- ""
   temp <- dat %>% # is this data in the dataset?
-    dplyr::filter(SRVY %in% input$survey &
-                    year == input$year) %>%
-    dplyr::select(SRVY) %>% 
+    dplyr::filter(
+      SRVY %in% input$survey &
+        year == input$year) %>%
+    dplyr::select(
+      SRVY
+    ) %>% 
     unique()
   
   if (input$plot_unit == "bottom_temperature_c") {
@@ -38,59 +39,90 @@ find_coldpool <- function(input) {
   temp <- gsub(pattern = "_", replacement = "", x = names(df2))
   temp <- gsub(pattern = "[A-Za-z]+", replacement = "", x = temp)
   
-  if (!(input$year %in% as.numeric(temp)) |
-      is.null(df2)) {
+  if (!(input$year %in% as.numeric(temp)) | is.null(df2)) {
     # if there is no data for this year, return an error message
     warning_str <- "The coldpool package has not created rasters for these temperature data yet. "
   } else {
     r <- df2[[which(input$year == as.numeric(temp))]]
   }
   
-  return(list("r" = r, 
-              "name" = r0))
+  return(
+    list(
+      "r" = r,
+      "name" = r0
+    )
+  )
 }
 
 # BASE MAP ----------------
 output$survey_leaflet <- renderLeaflet({
   
-  df0 <- dat %>%
-    dplyr::filter(year == input$year &
-                    SRVY %in% input$survey)
+  df0 <- 
+    dat %>%
+    dplyr::filter(
+      year == input$year &
+      SRVY %in% input$survey
+    )
   
-  pal <- colorNumeric(viridis(option = "G", n = 2, begin = .2, end = .8), 
-                      domain = shp_all$survey.area$survey_definition_id,
-                      na.color = "transparent")
+  pal <- 
+    colorNumeric(
+      viridis(
+        option = "G", 
+        n      = 2, 
+        begin  = .2, 
+        end    = .8
+      ), 
+      domain = shp_all$survey.area$survey_definition_id,
+      na.color = "transparent"
+    )
   
-  a <- leaflet(
-    options = leafletOptions(
-      crs = leafletCRS(
-        crsClass = "L.Proj.CRS",
-        code = "EPSG:3338",
-        proj4def = "+proj=aea +lat_1=55 +lat_2=65 +lat_0=50 +lon_0=-154 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs",
-        resolutions = 2^(16:7))) ) %>%
-    addPolygons(data = 
-                  rnaturalearth::ne_countries(
-                    scale = "medium", 
-                    returnclass = "sf") %>% 
-                  st_transform(crs = "+proj=longlat +datum=WGS84"),
-                weight = .5, 
-                color = "black", 
-                opacity = .5,
-                fillOpacity = 0.7,
-                smoothFactor = 0.5,
-                label = ~paste(name),
-                labelOptions = labelOptions(direction = "auto")) %>%
-    addPolygons(data = shp_all$survey.area %>% 
-                  dplyr::filter(SRVY %in% input$survey), 
-                weight = 1, 
-                color = "#444444", 
-                opacity = 1,
-                fillColor = ~pal(survey_definition_id), 
-                # fillOpacity = 0.2, 
-                # smoothFactor = 0.5,
-                label = ~paste(survey_long),
-                labelOptions = labelOptions(direction = "auto"))  %>%
-    htmlwidgets::prependContent(htmltools::tags$style(".leaflet-container { background: none !important; }" )) %>% # transparent
+  a <- 
+    leaflet(
+      options = leafletOptions(
+        crs = leafletCRS(
+          crsClass = "L.Proj.CRS",
+          code = "EPSG:3338",
+          proj4def = "+proj=aea +lat_1=55 +lat_2=65 +lat_0=50 +lon_0=-154 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs",
+          resolutions = 2^(16:7)
+        )
+      ) 
+    ) %>%
+    addPolygons(
+      data = rnaturalearth::ne_countries(
+        scale       = "medium", 
+        returnclass = "sf"
+      ) %>% 
+      st_transform(crs = "+proj=longlat +datum=WGS84"),
+      weight       = .5, 
+      color        = "black", 
+      opacity      = .5,
+      fillOpacity  = 0.7,
+      smoothFactor = 0.5,
+      label        = ~paste(name),
+      labelOptions = labelOptions(direction = "auto")
+    ) %>%
+    addPolygons(
+      data = shp_all$survey.area %>% 
+        dplyr::filter(
+          SRVY %in% input$survey
+        ), 
+      weight         = 1, 
+      color          = "#444444", 
+      opacity        = 1,
+      fillColor      = ~pal(survey_definition_id), 
+      # fillOpacity  = 0.2, 
+      # smoothFactor = 0.5,
+      label          = ~paste(survey_long),
+      labelOptions   = labelOptions(direction = "auto")
+    )  %>%
+    htmlwidgets::prependContent(
+      htmltools::tags$style(
+        ".leaflet-container { 
+          background: none !important; 
+        }" 
+      )
+    ) %>% 
+    # transparent
     # addProviderTiles(
     #   provider = providers$Stamen.TonerLite, 
     #   options = providerTileOptions(noWrap = F, minZoom = 2)
@@ -100,99 +132,151 @@ output$survey_leaflet <- renderLeaflet({
     # addLayersControl() %>%
     addMeasure(
       primaryLengthUnit = "kilometers",
-      secondaryAreaUnit = "miles") %>%
-    setView(lat = 56.60,
-            lng = -159.3,
-            zoom = 4) %>%
+      secondaryAreaUnit = "miles"
+    ) %>%
+    setView(
+      lat  = 56.60,
+      lng  = -159.3,
+      zoom = 4
+    ) %>%
     addDrawToolbar(
-      targetGroup='draw',
+      targetGroup ='draw',
       editOptions = editToolbarOptions(
-        selectedPathOptions = selectedPathOptions()),
-      polylineOptions = filterNULL(list(shapeOptions =
-                                          drawShapeOptions(lineJoin = "round",
-                                                           weight = 3))),
-      circleOptions = filterNULL(list(shapeOptions =
-                                        drawShapeOptions(),
-                                      repeatMode = F,
-                                      showRadius = T,
-                                      metric = T,
-                                      feet = F,
-                                      nautic = F))) %>%
-    addStyleEditor(position = "bottomleft",
-                   openOnLeafletDraw = TRUE)
+        selectedPathOptions = selectedPathOptions()
+      ),
+      polylineOptions = filterNULL(
+        list(
+          shapeOptions = drawShapeOptions(
+            lineJoin = "round",
+            weight   = 3
+          )
+        )
+      ),
+      circleOptions = filterNULL(
+        list(
+          shapeOptions = drawShapeOptions(),
+          repeatMode   = FALSE,
+          showRadius   = TRUE,
+          metric       = TRUE,
+          feet         = FALSE,
+          nautic       = FALSE
+        )
+      )
+    ) %>%
+    addStyleEditor(
+      position = "bottomleft",
+      openOnLeafletDraw = TRUE
+    )
   
   ## ADD STRATUM POLYGON? -----------------
   if (input$stratum) {
     
-    a <- a %>% 
-      addPolygons(data = shp_strat %>% 
-                    dplyr::filter(SRVY %in% input$survey), 
-                  weight = 1,
-                  # opacity = 0.5,
-                  stroke = 1, 
-                  color = "black", 
-                  fill = "transparent",
-                  fillColor = "transparent",
-                  # fillOpacity = 0.01,
-                  label = paste0("Stratum: ", shp_strat$stratum),
-                  highlightOptions = 
-                    highlightOptions(fillColor = 'grey50',
-                                     # opacity = 0.5, 
-                                     fill = 'grey50',
-                                     bringToFront = TRUE))
+    a <- 
+      a %>% 
+      addPolygons(
+        data = shp_strat %>% 
+          dplyr::filter(
+            SRVY %in% input$survey
+          ), 
+        weight           = 1,
+        # opacity          = 0.5,
+        stroke           = 1, 
+        color            = "black", 
+        fill             = "transparent",
+        fillColor        = "transparent",
+        # fillOpacity      = 0.01,
+        label = paste0(
+          "Stratum: ", 
+          shp_strat$stratum
+        ),
+        highlightOptions = highlightOptions(
+          fillColor    = 'grey50',
+          # opacity      = 0.5, 
+          fill         = 'grey50',
+          bringToFront = TRUE
+        )
+      )
   }
   
   # ADD STATION POINTS? ---------------------
   if (input$station) {
     
-    a <- a %>% 
-      addCircleMarkers(data = shp_stn %>% 
-                         dplyr::filter(SRVY %in% input$survey), 
-                       radius = .1, 
-                       weight = .25,
-                       opacity = 0.75,
-                       stroke = 0.1,
-                       color = nmfspalette::nmfs_palette(palette = "urchin")(1),
-                       fillOpacity = 0.5, 
-                       popup = paste(
-                         "<strong>Survey:</strong> ", df1$survey, "<br>",
-                         "<strong>Data State:</strong> ", df1$data_type,  "<br>",
-                         "<strong>Station:</strong> ", shp_stn$station, "<br>",
-                         "<strong>Stratum:</strong> ", shp_stn$stratum,  "<br>",
-                         "<strong>Latitude (&degN):</strong> ", round(shp_stn$lat, 2),  "<br>",
-                         "<strong>Longitude (&degW):</strong> ", round(shp_stn$lon, 2),  "<br>"
-                       ))
+    a <- 
+      a %>% 
+      addCircleMarkers(
+        data = shp_stn %>%
+          dplyr::filter(
+            SRVY %in% input$survey
+          ), 
+        radius      = .1, 
+        weight      = .25,
+        opacity     = 0.75,
+        stroke      = 0.1,
+        color       = nmfspalette::nmfs_palette(
+          palette = "urchin"
+        )(1),
+        fillOpacity = 0.5, 
+        popup       = paste(
+          "<strong>Survey:</strong> ", df1$survey, "<br>",
+          "<strong>Data State:</strong> ", df1$data_type,  "<br>",
+          "<strong>Station:</strong> ", shp_stn$station, "<br>",
+          "<strong>Stratum:</strong> ", shp_stn$stratum,  "<br>",
+          "<strong>Latitude (&degN):</strong> ", round(shp_stn$lat, 2),  "<br>",
+          "<strong>Longitude (&degW):</strong> ", round(shp_stn$lon, 2),  "<br>"
+        )
+      )
   }
   
   # ADD DATA -------------
   if (paste(input$plot_unit) != "none") {
     
     # pal_pal <- viridis_pal(begin = .2, end = .8, option = "B")
-    pal <- leaflet::colorNumeric(palette = viridis_pal(begin = .2, end = .8, option = "B")(2), 
-                                 domain = c(-2, 12), 
-                                 na.color = viridis(n = 1, begin = .8, end = .8, option = "B"))
+    pal <- 
+      leaflet::colorNumeric(
+        palette = viridis_pal(
+          begin  = .2, 
+          end    = .8, 
+          option = "B"
+        )(2), 
+        domain = c(-2, 12), 
+        na.color = viridis(
+          n      = 1, 
+          begin  = .8, 
+          end    = .8, 
+          option = "B"
+        )
+      )
     
     if (paste0(input$plot_display == "pt")) {
       
-      df0$val <- unlist(df0[,input$plot_unit])
+      df0$val <- 
+        unlist(df0[,input$plot_unit])
       
-      df1 <- df0 %>%
-        dplyr::filter(!is.na(val) &
-                        format(x = date, format = "%m %d") <= format(input$plot_dates, format = "%m %d")) %>% 
+      df1 <- 
+        df0 %>%
+        dplyr::filter(
+          !is.na(val) &
+            format(x = date, format = "%m %d") <= format(input$plot_dates, format = "%m %d")
+        ) %>% 
         dplyr::mutate(
           lon = longitude,
-          lat = latitude) %>%
-        sf::st_as_sf(., coords = c("lon","lat"))
+          lat = latitude
+        ) %>%
+        sf::st_as_sf(
+          ., 
+          coords = c("lon","lat")
+        )
       
-      a <- a %>%
+      a <- 
+        a %>%
         addCircleMarkers(
-          data = df1,
-          radius = 5, 
-          weight = 1,
-          opacity = .75,
+          data        = df1,
+          radius      = 5, 
+          weight      = 1,
+          opacity     = .75,
           fillOpacity = .75,
-          stroke = 1,
-          popup = paste0(
+          stroke      = 1,
+          popup       = paste0(
             "<strong>Survey:</strong> ", df1$survey, "<br>",
             "<strong>Data State:</strong> ", df1$data_type,  "<br>",
             "<strong>Data Source:</strong> ", ifelse(df1$data_type == "raw", "unpublished", "Fisheries One Stop Shop Data Portal: https://www.fisheries.noaa.gov/foss"),"<br>",
@@ -216,28 +300,43 @@ output$survey_leaflet <- renderLeaflet({
       # }
     } else if (paste0(input$plot_display == "coldpool")) {
       
-      r0 <- find_coldpool(input)
+      r0 <- 
+        find_coldpool(input)
       r <- r0$r
       
       if (!is.null(r)) {
-        xyz <- rasterToPoints(r) %>% 
+        xyz <- 
+          rasterToPoints(r) %>% 
           data.frame() %>% 
-          sf::st_as_sf(., coords = c("x", "y"), crs = proj4string(r)) %>% 
-          sf::st_transform(., crs = "+proj=longlat +datum=WGS84") 
-        names(xyz)[1] <- "val"
-        xyz0 <- xyz %>% 
-          dplyr::mutate(lon = sf::st_coordinates(xyz)[1], 
-                        lat = sf::st_coordinates(xyz)[2])
+          sf::st_as_sf(
+            ., 
+            coords = c("x", "y"), 
+            crs = proj4string(r)
+          ) %>% 
+          sf::st_transform(
+            ., 
+            crs = "+proj=longlat +datum=WGS84"
+          ) 
         
-        a <- a %>% 
+        names(xyz)[1] <- "val"
+        
+        xyz0 <- 
+          xyz %>% 
+          dplyr::mutate(
+            lon = sf::st_coordinates(xyz)[1], 
+            lat = sf::st_coordinates(xyz)[2]
+          )
+        
+        a <- 
+          a %>% 
           leaflet::addCircleMarkers(
-            data = xyz, 
-            radius = .5, 
-            weight = 1,
-            opacity = .5,
+            data        = xyz, 
+            radius      = .5, 
+            weight      = 1,
+            opacity     = .5,
             fillOpacity = .5,
-            stroke = 1,
-            popup = paste0(
+            stroke      = 1,
+            popup       = paste0(
               "<strong>Survey:</strong> ", paste(c("EBS", "NBS")[c("EBS", "NBS") %in% input$survey], collapse = " and "), "<br>",
               "<strong>Data Source:</strong> coldpool R package: `coldpool::",r0$name,"$",names(r),"`<br>",
               "<strong>Latitude (&degN):</strong> ", round(xyz0$lat, 2),  "<br>",
