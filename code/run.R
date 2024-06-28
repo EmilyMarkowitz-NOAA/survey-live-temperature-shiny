@@ -11,7 +11,9 @@
 # Set Working Directory --------------------------------------------------------
 ## Actually we cant use the here package, here - it actually causes issues with 
 ## the tasks scheduler, which has no concept of a project root folder. 
-locations <- c("Z:/Projects/survey-live-temperature-map/")
+# locations <- c("Z:/Projects/survey-live-temperature-map/")
+
+locations <- "C:/Users/michael.schram/Work/GitHub/survey-live-temperature-shiny/"
 
 for (i in 1:length(locations)){
   if (file.exists(locations[i])) {
@@ -21,7 +23,7 @@ for (i in 1:length(locations)){
 
 # KNOWNS -----------------------------------------------------------------------
 
-istest <- FALSE
+istest <- TRUE
 maxyr <- 2024
 data_source <- "gd" # "gd" = google dirve, "oracle" 
 dates0 <-  "latest" # "latest" # "all" # latest # "all", #"2021-06-05",# Sys.Date(), # as.character(seq(as.Date("2022-07-30"), as.Date("2022-08-14"), by="days"))
