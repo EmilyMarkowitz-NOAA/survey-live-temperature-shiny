@@ -83,13 +83,14 @@ header <-
     )
   )
 
-## Sidebar -------------------------------------------------------------------
+## Sidebar ---------------------------------------------------------------------
 sidebar = 
   dashboardSidebar(
     collapsed = FALSE, 
     minified  = FALSE,
     # width     = nchar(title0)*10.5,
     
+    ### Sidebar menu items -----------------------------------------------------
     sidebarMenu(
       id = "tabs",
       menuItem(
@@ -155,13 +156,14 @@ body <-
     tags$head(
       tags$style(
         HTML(
-          '.main-header 
+          '.main-header
           .sidebar-toggle:before {
             color: #10497e;
           }'
         )
       )
     ),
+
     tags$head(
       tags$style(
         ".table{margin: 0 auto;}"
@@ -171,139 +173,22 @@ body <-
         type="text/javascript"
       ),
       tags$link(
-        rel = "stylesheet", 
-        type = "text/css", 
+        rel = "stylesheet",
+        type = "text/css",
         href = "custom.css"
       ),
       tags$script(
         src = "./www/custom.js"
       ),
-      # ),
-      
-      # tags$head(
-      tags$style(
-        HTML('
-          /* logo */.skin-black 
-          .main-header 
-          .logo {
-            background-color: #ffffff; 
-            height: 65px;
-          }
-    
-          /* logo when hovered */
-          .skin-black 
-          .main-header 
-          .logo:hover {
-            background-color: #ffffff;
-            color: #000000;
-          }
-    
-          /* navbar (rest of the header) */
-          .skin-black 
-          .main-header 
-          .navbar {
-            background-image: linear-gradient(to right, #ffffff , #d9effa);
-            color: #000000;
-          }
-    
-          /* main sidebar */
-          .skin-black 
-          .main-sidebar {
-            background-color: #d9effa;
-          }
-    
-          /* active selected tab in the sidebarmenu */
-          .skin-black 
-          .main-sidebar 
-          .sidebar 
-          .sidebar-menu 
-          .active a{
-            background-color: #1f93d0;
-            color: #ffffff;
-          }
-    
-          /* other links in the sidebarmenu */
-          .skin-black 
-          .main-sidebar 
-          .sidebar 
-          .sidebar-menu a {
-            background-color: #d9effa;
-            color: #10497e;
-          }
-    
-          /* other links in the sidebarmenu when hovered */
-          .skin-black 
-          .main-sidebar 
-          .sidebar 
-          .sidebar-menu a:hover {
-            background-color: #1f93d0;
-            color: #ffffff;
-          }
-    
-          /* toggle button when hovered  */
-          .skin-black 
-          .main-header 
-          .navbar 
-          .sidebar-toggle:hover{
-            background-color: #1f93d0;
-            color: #10497e;
-          }
-    
-          /* body */
-          .content-wrapper, 
-          .right-side {
-            background-color: #ffffff;
-            color: #000000;
-          }
-    
-          .content-wrapper,
-          .right-side {
-            background-color: #ffffff;
-            color: #000000;
-            padding: 30px;
-          }
-    
-          .content-wrapper {
-            background-color: #ffffff !important;
-            color: #000000;
-           .leaflet-top
-           .leaflet-control {
-              margin: 0px;
-           }
-    
-          .leaflet-right {
-             margin-right: 40px;
-          }    
-          .full {
-            background-color: blue;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            float: left;
-          }
-
-          .circle {
-            background-color: #FFF;
-            border: 3px solid blue;
-            border-radius: 50%;
-            height: 20px;
-            width: 20px;
-          }
-
-          .leaflet-control i{
-            margin-right: 25px;
-          }'
-        )
-      )
     ),
-    
+
     tabItems(
-      ui.surveymap(),     # Welcome
+      ui.surveymap(),     # Bottom trawl survey progress map(s)
       # ui.welcome(),       # Welcome
       ui.metadata(),      # Roadmap
-      ui.glossary(),      # Roadmap
+      ui.glossary(),      # Glossary of Terms
       # ui.plots(),       # High Quality Maps
-      ui.data(),          # High Quality Maps
+      ui.data(),          # Access to the QAQC data
       # ui.import(),      # Import Data
       # ui.calculator(),  # Evaluation Metrics
       ui.licencing(),     # Export Predictions
@@ -336,7 +221,7 @@ server <- function(input, output, session) {
     content = 
       function(file) {
         filename0 <- file #"downloadData.csv"#here::here(getwd(), "downloadData.csv")
-  
+        
         # Threshold Isopleths Results WARNINGS
         write.table(
           input$dataset,
@@ -346,7 +231,7 @@ server <- function(input, output, session) {
           col.names = FALSE, 
           append    = TRUE
         )
-  
+        
         write.table(
           "Data",
           file      = filename0,
@@ -355,7 +240,7 @@ server <- function(input, output, session) {
           col.names = FALSE, 
           append    = TRUE
         )
-  
+        
         write.table(
           input$datasetInput,
           file      = filename0,
@@ -364,7 +249,7 @@ server <- function(input, output, session) {
           col.names = FALSE, 
           append    = TRUE
         )
-  
+        
         write.table(
           "", #Space
           file      = filename0,
@@ -373,7 +258,7 @@ server <- function(input, output, session) {
           col.names = FALSE, 
           append    = TRUE
         )
-  
+        
         # DISCLAIMER
         write.table(
           "LICENCE",
@@ -383,7 +268,7 @@ server <- function(input, output, session) {
           col.names = FALSE, 
           append    = TRUE
         )
-  
+        
         write.table(
           licence0,
           file      =filename0,
@@ -410,7 +295,7 @@ server <- function(input, output, session) {
       tempReport <- here::here(getwd(), "report4.Rmd")
       file.copy(from = "report4.Rmd", "report2.Rmd", overwrite = TRUE)
       file.copy("report2.Rmd", tempReport, overwrite = TRUE)
-
+      
       # Set up parameters to pass to Rmd document
       params <- list(
         ProjectName = input$ProjectName,

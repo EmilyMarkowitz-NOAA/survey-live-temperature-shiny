@@ -353,37 +353,56 @@ output$survey_leaflet <- renderLeaflet({
   # ADD VESSEL POINTS? ---------------------
   if (input$vessel) {
     
-    df00 <- df0 %>%
-      dplyr::filter(format(x = date, format = "%m %d") <= format(input$plot_dates, format = "%m %d")) %>% 
-      dplyr::select(SRVY, year, date, station, stratum, survey, 
-                    vessel_id, vessel_name, vessel_color, 
-                    latitude, longitude) %>%
+    df00 <- 
+      df0 %>%
+      dplyr::filter(
+        format(x = date, format = "%m %d") <= format(input$plot_dates, format = "%m %d")
+      ) %>% 
+      dplyr::select(
+        SRVY, 
+        year, 
+        date, 
+        station, 
+        stratum, 
+        survey, 
+        vessel_id, 
+        vessel_name, 
+        vessel_color, 
+        latitude, 
+        longitude
+      ) %>%
       dplyr::mutate(
         lon = longitude,
         lat = latitude) %>%
-      sf::st_as_sf(., coords = c("lon","lat")) %>%
-      sf::st_set_crs("+proj=longlat +datum=WGS84")
+      sf::st_as_sf(
+        ., 
+        coords = c("lon","lat")
+      ) %>%
+      sf::st_set_crs(
+        "+proj=longlat +datum=WGS84"
+      )
     
-    a <- a %>% 
-      addCircleMarkers(data = df00, 
-                       lng = df00$longitude, 
-                       lat = df00$latitude, 
-                       radius = 2, 
-                       weight = 5,
-                       opacity = 0.75,
-                       stroke = 1, 
-                       color = ~df00$vessel_color,
-                       popup = paste0(
-                         "<strong>Survey:</strong> ", df00$survey, "<br>",
-                         "<strong>Year:</strong> ", df00$year,  "<br>",
-                         "<strong>Station:</strong> ", df00$station, "<br>",
-                         ifelse(is.na(df00$stratum), "", paste0("<strong>Stratum:</strong> ", df00$stratum,  "<br>")),
-                         "<strong>Vessel:</strong> ", df00$vessel_name,  "<br>",
-                         "<strong>Latitude (&degN):</strong> ", round(df00$latitude, 2),  "<br>",
-                         "<strong>Longitude (&degW):</strong> ", round(df00$longitude, 2),  "<br>")
+    a <- 
+      a %>% 
+      addCircleMarkers(
+        data = df00, 
+        lng = df00$longitude, 
+        lat = df00$latitude, 
+        radius = 2, 
+        weight = 5,
+        opacity = 0.75,
+        stroke = 1, 
+        color = ~df00$vessel_color,
+        popup = paste0(
+          "<strong>Survey:</strong> ", df00$survey, "<br>",
+          "<strong>Year:</strong> ", df00$year,  "<br>",
+          "<strong>Station:</strong> ", df00$station, "<br>",
+          ifelse(is.na(df00$stratum), "", paste0("<strong>Stratum:</strong> ", df00$stratum,  "<br>")),
+          "<strong>Vessel:</strong> ", df00$vessel_name,  "<br>",
+          "<strong>Latitude (&degN):</strong> ", round(df00$latitude, 2),  "<br>",
+          "<strong>Longitude (&degW):</strong> ", round(df00$longitude, 2),  "<br>")
       )
   }
-  
   
   return(a)
 })
@@ -422,17 +441,19 @@ output$plot_display <- renderUI({
   r <- find_coldpool(input) # Does this return a raster wrt inputs?
   r <- r$r
   
-  temp <- list("Points" = "pt",
-               "Cold Pool R Package (EBS and NBS, only)" = "coldpool")
+  temp <- list(
+    "Points" = "pt",
+    "Cold Pool R Package (EBS and NBS, only)" = "coldpool"
+  )
   if (is.null(r)) {
     temp <- temp[1]
   }
   
   radioButtons(
-    inputId = "plot_display", 
-    label = HTML(paste("Data Display: ", sep = '<br/>')), 
-    # label = "Data Display: \n\n",
-    choices = temp,
+    inputId  = "plot_display", 
+    label    = HTML(paste("Data Display: ", sep = '<br/>')), 
+    # label  = "Data Display: \n\n",
+    choices  = temp,
     selected = "pt")
 })
 
@@ -440,11 +461,16 @@ output$plot_dates <- renderUI({
   
   req(input$plot_display == "pt") # this code will only work when plot_display is "pt"
   
-  df00 <- dat %>%
-    dplyr::filter(year == input$year & 
-                    # !is.na(date) &
-                    SRVY %in% input$survey) %>%
-    dplyr::select(date) #%>% 
+  df00 <- 
+    dat %>%
+    dplyr::filter(
+      year == input$year & 
+        # !is.na(date) &
+        SRVY %in% input$survey
+    ) %>%
+    dplyr::select(
+      date
+    ) #%>%
   # unique()
   
   # if (input$plot_display != "pt") {

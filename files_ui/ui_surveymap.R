@@ -12,26 +12,28 @@ ui.surveymap <- function() {
             includeCSS(here::here("files_support", "styles.css")),
             includeScript(here::here("files_support", "gomap.js"))
           ),
-          
+
           # If not using custom CSS, set height of leafletOutput to a number instead of percent
           leafletOutput(
-            "survey_leaflet", 
-            width  = "100%", 
+            "survey_leaflet",
+            width  = "100%",
             height = "95%"
           ),
           
           absolutePanel(
-            id        = "controls", 
-            class     = "panel panel-default", 
+            id        = "controls",
+            class     = "panel panel-default",
             fixed     = TRUE,
-            draggable = TRUE, 
-            top       = "80px", 
-            left      = "auto", 
-            right     = "20%", 
+            draggable = FALSE,
+            top       = "70px",
+            left      = "auto",
+            right     = "15px",
             bottom    = "auto",
-            width     = 330, 
+            width     = "auto",
             height    = "auto",
+            
             br(),
+            
             selectInput(
               inputId  = "year", 
               label    = "Year", 
@@ -39,11 +41,29 @@ ui.surveymap <- function() {
               selected = max(dat$year), 
               multiple = FALSE
             ),
-            br(),
+            selectInput(
+              inputId = "plot_display",
+              label   = "Display",
+              choices = c(
+                "Points" = "pt",
+                "Coldpool"    = "coldpool"
+              ),
+              selected = "pt"
+            ),
             selectInput(
               inputId  = "survey", 
               label    = "Survey", 
-              choices  = sort(unique(shp_all$survey.area$SRVY))[sort(unique(shp_all$survey.area$SRVY)) != "NEBS"], 
+              choices  = sort(
+                unique(
+                  # Removes "NEBS" if present in the list
+                  grep(
+                    "NEBS",
+                    shp_all$survey.area$SRVY,
+                    invert = TRUE,
+                    value  = TRUE
+                  )
+                )
+              ), 
               selected = c("EBS", "NBS"), 
               multiple = TRUE
             ),
@@ -62,16 +82,18 @@ ui.surveymap <- function() {
               label   = "Vessels", 
               value   = FALSE
             ), 
+            
             br(),
+            
             selectInput(
               inputId = "plot_unit",
               label   = "Environmental Variable",
               choices = c(
-                "Bottom Temperature (°C)" = "bottom_temperature_c", 
-                "Surface Temperature (°C)" = "surface_temperature_c", 
+                "Bottom Temperature (°C)" = "bottom_temperature_c",
+                "Surface Temperature (°C)" = "surface_temperature_c",
                 "None" = "none"
               ),
-              selected = "none"
+              selected = "none",
             ),
             
             uiOutput("plot_display"),
