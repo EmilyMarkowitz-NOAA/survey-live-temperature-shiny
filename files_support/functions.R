@@ -73,7 +73,8 @@ PKG <- c(
   
   #shiny
   "shiny", # Need for running Shiny apps
-  "shinydashboard", 
+  "shinydashboard",
+  "shinydashboardPlus",
   "shinythemes", 
   "shinyauthr", 
   
