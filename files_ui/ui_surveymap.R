@@ -38,9 +38,11 @@ ui.surveymap <- function() {
               inputId  = "year", 
               label    = "Year", 
               choices  = sort(unique(dat$year)), 
-              selected = max(dat$year), 
+              # selected = max(dat$year), 
+              selected = 2023, # FOR TESTING
               multiple = FALSE
             ),
+            
             selectInput(
               inputId = "plot_display",
               label   = "Display",
@@ -50,6 +52,7 @@ ui.surveymap <- function() {
               ),
               selected = "pt"
             ),
+            
             selectInput(
               inputId  = "survey", 
               label    = "Survey", 
