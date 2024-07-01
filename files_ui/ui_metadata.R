@@ -4,7 +4,6 @@ ui.metadata <- function() {
     fluidRow(
       HTML("<html lang='en'>"), #Always have this as your first line
       
-      
       # HTML("<h1>Hi this is heading<span class='glyphicon glyphicon-star'></span> Star</h1>"),
       img(src="FISHERIES-Logo WEB ONLY.png", width = '35%'),
       br(),
@@ -12,11 +11,14 @@ ui.metadata <- function() {
       h1(paste0("AFSC/RACE: Alaska Groundfish Survey ", min(dat$year), " - ", max(dat$year))),
       br(),
       
-      
       h2("Cite this tool"),
-      p(paste0('Data last updated ', lastdl,
-                              ' and this app was last updated ',
-                              format(Sys.Date(), format='%B %d %Y'),'.')), 
+      p(
+        paste0(
+          'Data were last updated ', lastdl,
+          ' and this app was last updated ',
+          format(Sys.Date(), format='%B %d %Y'),
+          '.')
+        ), 
       p("CITE"),
       br(),
       
