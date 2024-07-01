@@ -205,64 +205,111 @@ if (doihaveinternet) {
   
   if (max(dat_surveys$year) < date_max) { # if this year's data hasn't been entered into the production data
     
-  dat_haul_oracleraw <- dplyr::inner_join(
-    # Pull event data
-    x = RODBC::sqlQuery(channel, paste0( 
-      "SELECT HAUL_ID, 
-  EDIT_DATE_TIME, 
-  EDIT_LATITUDE AS LATITUDE_DD_START, 
-  EDIT_LONGITUDE AS LONGITUDE_DD_START 
-  FROM RACE_DATA.EDIT_EVENTS
-  WHERE EVENT_TYPE_ID = 3;")) %>%   # standard haul
-      dplyr::filter(format(as.Date(EDIT_DATE_TIME), format = "%Y") == date_max) %>%
-    dplyr::rename(date = EDIT_DATE_TIME) %>%
-    dplyr::mutate(
-      # date = format(as.Date(date), format = c("%Y-%m-%d %H:%M")),
-      LONGITUDE_DD_START = ddm2dd(LONGITUDE_DD_START), 
-      LATITUDE_DD_START = ddm2dd(LATITUDE_DD_START)),
-    
-    # Pull haul data
-    y = RODBC::sqlQuery(channel, paste0( #  EDIT_GEAR_TEMPERATURE_UNITS, EDIT_SURFACE_TEMPERATURE_UNITS, ABUNDANCE_HAUL, CREATE_DATE, 
-      "SELECT HAUL_ID, 
-  CRUISE_ID, 
-  HAUL, 
-  STATION, 
-  -- STRATUM, 
-  EDIT_BOTTOM_DEPTH as DEPTH_M, 
-  EDIT_SURFACE_TEMPERATURE AS surface_temperature_c, 
-  EDIT_GEAR_TEMPERATURE AS bottom_temperature_c
-  FROM RACE_DATA.EDIT_HAULS
-  WHERE PERFORMANCE >= 0;")), 
-    
-    by = "HAUL_ID")  %>% 
-    
-    # Get vessel info and SURVEY_ID
-    dplyr::left_join(y = RODBC::sqlQuery(channel, paste0( 
-      "SELECT CRUISE_ID, 
-      SURVEY_ID, 
-  VESSEL_ID, 
-  START_DATE, 
-  END_DATE
-  FROM RACE_DATA.CRUISES;")) %>% 
-        dplyr::mutate(survey_dates = paste0(format(START_DATE, "%B %d"), " - ", format(END_DATE, "%B %d, %Y"))) %>% 
-        dplyr::select(-START_DATE, -END_DATE), 
-      by = "CRUISE_ID") %>%
-    
-    # Add SURVEY_DEFINITION_ID
-    dplyr::left_join(y = RODBC::sqlQuery(channel, paste0( 
-      "SELECT SURVEY_DEFINITION_ID, 
-      SURVEY_ID
-  FROM RACE_DATA.SURVEYS;")), 
-      by = "SURVEY_ID") %>%  
-    
+    dat_haul_oracleraw <- dplyr::inner_join(
+      # Pull event data
+      x = RODBC::sqlQuery(
+        channel, 
+        paste0( 
+          "SELECT HAUL_ID, 
+          EDIT_DATE_TIME, 
+          EDIT_LATITUDE AS LATITUDE_DD_START, 
+          EDIT_LONGITUDE AS LONGITUDE_DD_START 
+          FROM RACE_DATA.EDIT_EVENTS
+          WHERE EVENT_TYPE_ID = 3;"
+        )
+      ) %>%   # standard haul
+      dplyr::filter(
+        format(as.Date(EDIT_DATE_TIME), format = "%Y") == date_max
+      ) %>%
+      dplyr::rename(
+        date = EDIT_DATE_TIME
+      ) %>%
+      dplyr::mutate(
+        # date = format(as.Date(date), format = c("%Y-%m-%d %H:%M")),
+        LONGITUDE_DD_START = ddm2dd(LONGITUDE_DD_START), 
+        LATITUDE_DD_START = ddm2dd(LATITUDE_DD_START)
+      ),
+      
+      # Pull haul data
+      y = RODBC::sqlQuery(
+        channel, 
+        paste0( #  EDIT_GEAR_TEMPERATURE_UNITS, EDIT_SURFACE_TEMPERATURE_UNITS, ABUNDANCE_HAUL, CREATE_DATE, 
+          "SELECT HAUL_ID, 
+          CRUISE_ID, 
+          HAUL, 
+          STATION, 
+          -- STRATUM, 
+          EDIT_BOTTOM_DEPTH as DEPTH_M, 
+          EDIT_SURFACE_TEMPERATURE AS surface_temperature_c, 
+          EDIT_GEAR_TEMPERATURE AS bottom_temperature_c
+          FROM RACE_DATA.EDIT_HAULS
+          WHERE PERFORMANCE >= 0;"
+        )
+      ), 
+      
+      by = "HAUL_ID"
+    )  %>% 
+      
+      # Get vessel info and SURVEY_ID
+    dplyr::left_join(
+      y = RODBC::sqlQuery(
+        channel, 
+        paste0(
+          "SELECT CRUISE_ID, 
+          SURVEY_ID, 
+          VESSEL_ID, 
+          START_DATE, 
+          END_DATE
+          FROM RACE_DATA.CRUISES;"
+        )
+      ) %>% 
+      dplyr::mutate(
+        survey_dates = paste0(
+          format(START_DATE, "%B %d"), 
+          " - ", 
+          format(END_DATE, "%B %d, %Y")
+        )
+      ) %>% 
+      dplyr::select(
+        -START_DATE, 
+        -END_DATE
+      ), 
+      by = "CRUISE_ID"
+    ) %>%
+      
+      # Add SURVEY_DEFINITION_ID
+    dplyr::left_join(
+      y = RODBC::sqlQuery(
+        channel, 
+        paste0(
+          "SELECT SURVEY_DEFINITION_ID, 
+          SURVEY_ID
+          FROM RACE_DATA.SURVEYS;")
+        ), 
+      by = "SURVEY_ID"
+    ) %>%  
+      
     janitor::clean_names() %>% 
-    dplyr::select(-survey_id, -cruise_id, -haul_id) %>%
-    dplyr::left_join(x = ., 
-                     y = dat_surveys %>% 
-                       dplyr::select(-survey_dates, -year) %>% 
-                       dplyr::distinct()) %>% 
-      dplyr::mutate(data_type = "raw") %>% 
-    dplyr::mutate(year = date_max) %>% 
+    dplyr::select(
+      -survey_id, 
+      -cruise_id, 
+      -haul_id
+    ) %>%
+    dplyr::left_join(
+      x = ., 
+      y = dat_surveys %>%
+        dplyr::select(
+          -survey_dates, 
+          -year
+        ) %>% 
+        dplyr::distinct()
+    ) %>% 
+    dplyr::mutate(
+      data_type = "raw"
+    ) %>% 
+    dplyr::mutate(
+      year = date_max
+    ) %>% 
     dplyr::ungroup()
     
   } else {
@@ -272,15 +319,25 @@ if (doihaveinternet) {
   save(dat_haul_oracleraw, dat_haul_api, date_max, file = here::here("data","backupdata.rdat"))
 
 } else {
-  lastdl <- as.Date(file.info(here::here("data","backupdata.rdat"))$ctime)
+  lastdl <- 
+    as.Date(
+      file.info(here::here("data","backupdata.rdat"))$ctime
+    )
+  
   load(here::here("data","backupdata.rdat"))
 }
 # Combined haul data --------------------------------------------------------------------
 
-dat <- dat_event <- dplyr::bind_rows(dat_haul_oracleraw, dat_haul_api)  %>% 
+dat <- dplyr::bind_rows(dat_haul_oracleraw, dat_haul_api)  %>% 
   dplyr::select(
-    year, stratum, station, date, data_type, 
-    SRVY, survey, survey_dates, 
+    year, 
+    stratum, 
+    station, 
+    date, 
+    data_type, 
+    SRVY, 
+    survey, 
+    survey_dates, 
     vessel_id, vessel_name, vessel_color, vessel_ital, vessel_shape, 
     depth_m,
     surface_temperature_c,
@@ -291,7 +348,16 @@ dat <- dat_event <- dplyr::bind_rows(dat_haul_oracleraw, dat_haul_api)  %>%
     # bt = bottom_temperature_c, 
     # latitude = latitude_dd_start, 
     # longitude = longitude_dd_start
-    ) %>% 
+  ) %>% 
+  dplyr::mutate(
+    survey_long = dplyr::case_when(
+      SRVY == "EBS" ~ "Eastern Bering Sea", 
+      SRVY == "NBS" ~ "Northern Bering Sea", 
+      SRVY == "GOA" ~ "Gulf of Alaska", 
+      SRVY == "AI" ~ "Aleutian Islands"
+    ),
+    .after = SRVY
+  ) %>% 
   dplyr::arrange(-year)
   # dplyr::filter(
   #   !(is.na(station)) &
