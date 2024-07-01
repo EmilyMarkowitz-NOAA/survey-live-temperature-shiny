@@ -10,6 +10,7 @@ source(here::here("files_support", "data.R"))
 source(here::here("files_ui", "ui_surveymap.R"))
 source(here::here("files_ui", "ui_metadata.R"))
 source(here::here("files_ui", "ui_glossary.R"))
+source(here::here("files_ui", "ui_test.R"))
 source(here::here("files_ui", "ui_data.R"))
 # source(here::here("files_ui", "ui_plots.R"))
 source(here::here("files_ui", "ui_licencing.R"))
@@ -18,6 +19,7 @@ source(here::here("files_ui", "ui_manual.R"))
 # Server script parsed by feature ----------------------------------------------
 # readline(here::here("files_server", "s_surveymap.R"))
 # source(here::here("files_server", "s_surveymap.R"))
+# source(here::here("files_server", "s_test.R"))
 # source(here::here("files_server", "s_glossary.R"))
 source(here::here("files_server", "s_data.R"))
 # source(here::here("files_server", "s_glossary.R"))
@@ -26,7 +28,7 @@ source(here::here("files_server", "s_data.R"))
 title0 <- " | Bottom Trawl Survey Temperature and Progress Maps "
 subtitle0 <-  "NOAA Fisheries scientists share information on ocean temperatures recorded during the Aleutian Islands, Gulf of Alaska and Bering Sea Bottom Trawl Surveys"
 
-## Header ----------------------------------------------------------------------
+# ## Header ----------------------------------------------------------------------
 header <-
   shinydashboardPlus::dashboardHeader(
     title =
@@ -44,7 +46,7 @@ header <-
           )
       ),
     titleWidth = nchar(title0)*10.5,
-    
+
     ### Other icons ----
     #### Information ----
     dropdownMenu(
@@ -70,7 +72,7 @@ header <-
         href = "https://www.fisheries.noaa.gov/about/resource-assessment-and-conservation-engineering-division"
       )
     ),
-    
+
     #### Github repository ----
     tags$li(
       class = "dropdown",
@@ -96,6 +98,11 @@ sidebar =
       menuItem(
         "Survey Map", 
         tabName = "surveymap", 
+        icon    = icon("file-image")
+      ),
+      menuItem(
+        "Test", 
+        tabName = "test", 
         icon    = icon("file-image")
       ),
       # menuItem(
@@ -152,40 +159,41 @@ sidebar =
 ## Body ----------------------------------------------------------------------
 body <-  
   dashboardBody(
-    shinyjs::useShinyjs(),
-    tags$head(
-      tags$style(
-        HTML(
-          '.main-header
-          .sidebar-toggle:before {
-            color: #10497e;
-          }'
-        )
-      )
-    ),
-
-    tags$head(
-      tags$style(
-        ".table{margin: 0 auto;}"
-      ),
-      tags$script(
-        src="https://cdnjs.cloudflare.com/ajax/libs/iframe-resizer/3.5.16/iframeResizer.contentWindow.min.js",
-        type="text/javascript"
-      ),
-      tags$link(
-        rel = "stylesheet",
-        type = "text/css",
-        href = "custom.css"
-      ),
-      tags$script(
-        src = "./www/custom.js"
-      ),
-    ),
+    # shinyjs::useShinyjs(),
+    # tags$head(
+    #   tags$style(
+    #     HTML(
+    #       '.main-header
+    #       .sidebar-toggle:before {
+    #         color: #10497e;
+    #       }'
+    #     )
+    #   )
+    # ),
+    # 
+    # tags$head(
+    #   tags$style(
+    #     ".table{margin: 0 auto;}"
+    #   ),
+    #   tags$script(
+    #     src="https://cdnjs.cloudflare.com/ajax/libs/iframe-resizer/3.5.16/iframeResizer.contentWindow.min.js",
+    #     type="text/javascript"
+    #   ),
+    #   tags$link(
+    #     rel = "stylesheet",
+    #     type = "text/css",
+    #     href = "custom.css"
+    #   ),
+    #   tags$script(
+    #     src = "./www/custom.js"
+    #   ),
+    # ),
 
     tabItems(
       ui.surveymap(),     # Bottom trawl survey progress map(s)
       # ui.welcome(),       # Welcome
       ui.metadata(),      # Roadmap
+      ui.test(),          # TEST TEST TEST
       ui.glossary(),      # Glossary of Terms
       # ui.plots(),       # High Quality Maps
       ui.data(),          # Access to the QAQC data
@@ -205,114 +213,114 @@ ui <-
   )
 
 # Server -----------------------------------------------------------------------
-server <- function(input, output, session) {
-  
-  ## Body ----------------------------------------------------------------------
-
-  
-  ## CSV Download --------------------------------------------------------------
-  output$downloadData <- 
-    downloadHandler(
-    # filename <- paste0("NOAAAcousticThresholds_", Sys.Date(), ".csv"),
-    filename = #function() {
-      "downloadData.csv",
-    # },
-    contentType = "text/csv",
-    content = 
-      function(file) {
-        filename0 <- file #"downloadData.csv"#here::here(getwd(), "downloadData.csv")
-        
-        # Threshold Isopleths Results WARNINGS
-        write.table(
-          input$dataset,
-          file      = filename0,
-          sep       = ",", 
-          row.names = FALSE, 
-          col.names = FALSE, 
-          append    = TRUE
-        )
-        
-        write.table(
-          "Data",
-          file      = filename0,
-          sep       = ",", 
-          row.names = FALSE, 
-          col.names = FALSE, 
-          append    = TRUE
-        )
-        
-        write.table(
-          input$datasetInput,
-          file      = filename0,
-          sep       = ",", 
-          row.names = TRUE, 
-          col.names = FALSE, 
-          append    = TRUE
-        )
-        
-        write.table(
-          "", #Space
-          file      = filename0,
-          sep       = ",", 
-          row.names = FALSE, 
-          col.names = FALSE, 
-          append    = TRUE
-        )
-        
-        # DISCLAIMER
-        write.table(
-          "LICENCE",
-          file      = filename0,
-          sep       = ",", 
-          row.names = FALSE, 
-          col.names = FALSE, 
-          append    = TRUE
-        )
-        
-        write.table(
-          licence0,
-          file      =filename0,
-          sep       = ",", 
-          row.names = TRUE, 
-          col.names = FALSE, 
-          append    = TRUE
-       )
-      }
-  )
-
-  ## R Markdown Report  --------------------------------------------------------
-  
-  output$report <- 
-    downloadHandler(
-    # For PDF output, change this to "report.pdf"
-    filename    = "report.html",
-    contentType = "text/html",
-
-    content = function(file) {
-      # Copy the report file to a temporary directory before processing it, in
-      # case we don't have write permissions to the current working dir (which
-      # can happen when deployed).
-      tempReport <- here::here(getwd(), "report4.Rmd")
-      file.copy(from = "report4.Rmd", "report2.Rmd", overwrite = TRUE)
-      file.copy("report2.Rmd", tempReport, overwrite = TRUE)
-      
-      # Set up parameters to pass to Rmd document
-      params <- list(
-        ProjectName = input$ProjectName,
-        distPlot = input$distPlot,
-        table = input$table
-      )
-      # Knit the document, passing in the `params` list, and eval it in a
-      # child of the global environment (this isolates the code in the document
-      # from the code in this app).
-      rmarkdown::render(tempReport, output_file = file,
-                        params = params,
-                        envir = new.env(parent = globalenv())
-      )
-    }
-
-
-  )
-}
+server <- function(input, output, session) {}
+#   
+#   ## Body ----------------------------------------------------------------------
+# 
+#   
+#   ## CSV Download --------------------------------------------------------------
+#   output$downloadData <- 
+#     downloadHandler(
+#     # filename <- paste0("NOAAAcousticThresholds_", Sys.Date(), ".csv"),
+#     filename = #function() {
+#       "downloadData.csv",
+#     # },
+#     contentType = "text/csv",
+#     content = 
+#       function(file) {
+#         filename0 <- file #"downloadData.csv"#here::here(getwd(), "downloadData.csv")
+#         
+#         # Threshold Isopleths Results WARNINGS
+#         write.table(
+#           input$dataset,
+#           file      = filename0,
+#           sep       = ",", 
+#           row.names = FALSE, 
+#           col.names = FALSE, 
+#           append    = TRUE
+#         )
+#         
+#         write.table(
+#           "Data",
+#           file      = filename0,
+#           sep       = ",", 
+#           row.names = FALSE, 
+#           col.names = FALSE, 
+#           append    = TRUE
+#         )
+#         
+#         write.table(
+#           input$datasetInput,
+#           file      = filename0,
+#           sep       = ",", 
+#           row.names = TRUE, 
+#           col.names = FALSE, 
+#           append    = TRUE
+#         )
+#         
+#         write.table(
+#           "", #Space
+#           file      = filename0,
+#           sep       = ",", 
+#           row.names = FALSE, 
+#           col.names = FALSE, 
+#           append    = TRUE
+#         )
+#         
+#         # DISCLAIMER
+#         write.table(
+#           "LICENCE",
+#           file      = filename0,
+#           sep       = ",", 
+#           row.names = FALSE, 
+#           col.names = FALSE, 
+#           append    = TRUE
+#         )
+#         
+#         write.table(
+#           licence0,
+#           file      =filename0,
+#           sep       = ",", 
+#           row.names = TRUE, 
+#           col.names = FALSE, 
+#           append    = TRUE
+#        )
+#       }
+#   )
+# 
+#   ## R Markdown Report  --------------------------------------------------------
+#   
+#   output$report <- 
+#     downloadHandler(
+#     # For PDF output, change this to "report.pdf"
+#     filename    = "report.html",
+#     contentType = "text/html",
+# 
+#     content = function(file) {
+#       # Copy the report file to a temporary directory before processing it, in
+#       # case we don't have write permissions to the current working dir (which
+#       # can happen when deployed).
+#       tempReport <- here::here(getwd(), "report4.Rmd")
+#       file.copy(from = "report4.Rmd", "report2.Rmd", overwrite = TRUE)
+#       file.copy("report2.Rmd", tempReport, overwrite = TRUE)
+#       
+#       # Set up parameters to pass to Rmd document
+#       params <- list(
+#         ProjectName = input$ProjectName,
+#         distPlot = input$distPlot,
+#         table = input$table
+#       )
+#       # Knit the document, passing in the `params` list, and eval it in a
+#       # child of the global environment (this isolates the code in the document
+#       # from the code in this app).
+#       rmarkdown::render(tempReport, output_file = file,
+#                         params = params,
+#                         envir = new.env(parent = globalenv())
+#       )
+#     }
+# 
+# 
+#   )
+# }
 
 shinyApp(ui, server)
