@@ -2,9 +2,13 @@
 ui.surveymap <- function() {
   tabItem(
     tabName = "surveymap",
-    fluidRow(
+    fluidPage(
       HTML("<html lang='en'>"), #Always have this as your first line
-      
+      leafletOutput(
+        "survey_leaflet",
+        # width  = "100%",
+        # height = "95%"
+      ),
       div(class="outer",
           
           tags$head(
@@ -14,11 +18,11 @@ ui.surveymap <- function() {
           ),
 
           # If not using custom CSS, set height of leafletOutput to a number instead of percent
-          leafletOutput(
-            "survey_leaflet",
-            width  = "100%",
-            height = "95%"
-          ),
+          # leafletOutput(
+          #   "survey_leaflet",
+          #   width  = "100%",
+          #   height = "95%"
+          # ),
           
           absolutePanel(
             id        = "controls",

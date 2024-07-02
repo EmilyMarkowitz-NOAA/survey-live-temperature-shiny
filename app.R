@@ -18,10 +18,10 @@ source(here::here("files_ui", "ui_manual.R"))
 
 # Server script parsed by feature ----------------------------------------------
 # readline(here::here("files_server", "s_surveymap.R"))
-# source(here::here("files_server", "s_surveymap.R"))
-# source(here::here("files_server", "s_test.R"))
+source(here::here("files_server", "s_test.R"))
+source(here::here("files_server", "s_surveymap.R"))
 # source(here::here("files_server", "s_glossary.R"))
-source(here::here("files_server", "s_data.R"))
+# source(here::here("files_server", "s_data.R"))
 # source(here::here("files_server", "s_glossary.R"))
 
 # Define -----------------------------------------------------------------------
@@ -90,7 +90,7 @@ sidebar =
   dashboardSidebar(
     collapsed = FALSE, 
     minified  = FALSE,
-    # width     = nchar(title0)*10.5,
+    #width     = nchar(title0)*10.5,
     
     ### Sidebar menu items -----------------------------------------------------
     sidebarMenu(
@@ -103,7 +103,7 @@ sidebar =
       menuItem(
         "Test", 
         tabName = "test", 
-        icon    = icon("file-image")
+        icon    = icon("globe")
       ),
       # menuItem(
       #   "Welcome",
@@ -213,7 +213,6 @@ ui <-
   )
 
 # Server -----------------------------------------------------------------------
-server <- function(input, output, session) {}
 #   
 #   ## Body ----------------------------------------------------------------------
 # 
