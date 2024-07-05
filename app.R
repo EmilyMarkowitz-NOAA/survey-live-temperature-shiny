@@ -94,17 +94,17 @@ sidebar =
     
     ### Sidebar menu items -----------------------------------------------------
     sidebarMenu(
-      # Bottom trawl survey progress map(s)
-      menuItem(
-        "Survey Map", 
-        tabName = "surveymap", 
-        icon    = icon("file-image")
-      ),
       # Bottom trawl survey progress map(s) TEST
       menuItem(
         "Test", 
         tabName = "test", 
         icon    = icon("globe")
+      ),
+      # Bottom trawl survey progress map(s)
+      menuItem(
+        "Survey Map", 
+        tabName = "surveymap", 
+        icon    = icon("file-image")
       ),
       # Welcome
       menuItem(
@@ -169,16 +169,16 @@ sidebar =
 body <-  
   dashboardBody(
     tabItems(
-      # Bottom trawl survey progress map(s)
-      # tabItem(
-      #   tabName = "surveymap",
-      #   ui.surveymap("map1")
-      # ),
       # Bottom trawl survey progress map(s) TEST
       tabItem(
         tabName = "test", 
         ui_test("maptest")           
       )
+      # # Bottom trawl survey progress map(s)
+      # tabItem(
+      #   tabName = "surveymap",
+      #   ui.surveymap("map1")
+      # ),
       # # Welcome
       # tabItem(
       #   tabName = "",
