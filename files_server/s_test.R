@@ -124,13 +124,7 @@ s_test <- function(id) {
             # fillOpacity      = 0.01,
             label = paste0(
               "Stratum: ", 
-              dplyr::select(
-                dplyr::filter(
-                  shp_all$survey.strata,
-                  SRVY %in% input$survey
-                ),
-                stratum
-              )
+              shp_all$survey.strata$stratum
             ),
             highlightOptions = highlightOptions(
               fillColor    = 'grey50',
