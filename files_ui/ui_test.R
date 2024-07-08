@@ -16,7 +16,7 @@ ui_test <- function(id) {
       left      = "auto",
       right     = "15px",
       bottom    = "auto",
-      width     = "auto",
+      # width     = "350",
       height    = "auto",
       
       br(),

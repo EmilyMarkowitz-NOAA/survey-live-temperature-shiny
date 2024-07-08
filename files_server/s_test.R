@@ -1,6 +1,6 @@
 s_test <- function(id) {
   moduleServer(id, function(input, output, session) {
-    
+   
     ## MAY NEED TO MOVE TO DATA.R or APP.R file
     shp_all$survey.area <- 
       dplyr::mutate(
@@ -14,6 +14,7 @@ s_test <- function(id) {
         )
       )
     
+    # Survey region shapefile color palette
     pal <- 
       colorNumeric(
         viridis(
@@ -103,6 +104,74 @@ s_test <- function(id) {
             )
           )
         )
+      
+      ## ADD STRATUM POLYGON? -----------------
+      if (input$stratum) {
+        
+        a <- 
+          a %>% 
+          addPolygons(
+            data = shp_all$survey.strata %>% 
+              st_transform(crs = "+proj=longlat +datum=WGS84") %>%
+              dplyr::filter(
+                SRVY %in% input$survey
+              ), 
+            weight           = 0.05,
+            # opacity          = 0.5,
+            color            = "black", 
+            fill             = "transparent",
+            fillColor        = "transparent",
+            # fillOpacity      = 0.01,
+            label = paste0(
+              "Stratum: ", 
+              dplyr::select(
+                dplyr::filter(
+                  shp_all$survey.strata,
+                  SRVY %in% input$survey
+                ),
+                stratum
+              )
+            ),
+            highlightOptions = highlightOptions(
+              fillColor    = 'grey50',
+              # opacity      = 0.5, 
+              fill         = 'grey50',
+              bringToFront = TRUE
+            )
+          )
+      } else{
+        a
+      }
+      
+      # ADD STATION POINTS? ---------------------
+      if (input$station) {
+        a <-
+          a %>%
+          addPolygons( 
+          # addCircleMarkers( 
+            data = shp_all$survey.grid %>%
+              st_transform(crs = "+proj=longlat +datum=WGS84") %>%
+              dplyr::filter(
+                SRVY %in% input$survey
+              ),
+            weight      = 1,
+            # opacity     = 0.25,
+            stroke      = 0.1,
+            color       = "black",
+            # fillcolor       = nmfspalette::nmfs_palette(palette = "urchin")(1),
+            fillOpacity = 0.1,
+            # popup       = paste(
+            #   "<strong>Survey:</strong> ", df1$survey, "<br>",
+            #   "<strong>Data State:</strong> ", df1$data_type,  "<br>",
+            #   "<strong>Station:</strong> ", shp_stn$station, "<br>",
+            #   "<strong>Stratum:</strong> ", shp_stn$stratum,  "<br>",
+            #   "<strong>Latitude (&degN):</strong> ", round(shp_stn$lat, 2),  "<br>",
+            #   "<strong>Longitude (&degW):</strong> ", round(shp_stn$lon, 2),  "<br>"
+            # )
+          )
+      } else {
+        a
+      }
     })
   })
 }
