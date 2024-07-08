@@ -12,7 +12,7 @@ ui_test <- function(id) {
       class     = "panel panel-default",
       fixed     = TRUE,
       draggable = TRUE,
-      top       = "550px",
+      top       = "500",
       left      = "auto",
       right     = "15px",
       bottom    = "auto",

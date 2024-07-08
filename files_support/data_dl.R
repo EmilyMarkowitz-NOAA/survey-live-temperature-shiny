@@ -442,7 +442,16 @@ shp_all$survey.area <- dplyr::bind_rows(list(
     y = dat_survey_design %>%
       dplyr::select(survey_definition_id, SRVY, design_year) %>% # because EBS and NBS can just be called together
       dplyr::distinct()) %>% 
-  dplyr::relocate(survey_definition_id, SRVY)
+  dplyr::relocate(survey_definition_id, SRVY) %>%
+  dplyr::mutate(
+    survey_long = dplyr::case_when(
+      SRVY == "EBS" ~ "Eastern Bering Sea",  
+      SRVY == "NBS" ~ "Northern Bering Sea",
+      SRVY == "AI" ~ "Aleutian Islands", 
+      SRVY == "GOA" ~ "Gulf of Alaska",  
+      SRVY == "BSS" ~ "Bering Sea Slope"
+    )
+  )
 
 ## Graticules (line) -----------------------------------------------------------
 

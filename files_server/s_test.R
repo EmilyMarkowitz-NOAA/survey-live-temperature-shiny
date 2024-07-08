@@ -6,7 +6,7 @@ s_test <- function(id) {
       dplyr::mutate(
         shp_all$survey.area,
         survey_long = dplyr::case_when(
-          SRVY == "AI" ~ "Aleutian Islands", 
+          SRVY == "AI"  ~ "Aleutian Islands", 
           SRVY == "BSS" ~ "Bering Sea Slope", 
           SRVY == "EBS" ~ "Eastern Bering Sea",  
           SRVY == "GOA" ~ "Gulf of Alaska",  
@@ -20,8 +20,8 @@ s_test <- function(id) {
         viridis(
           option = "G", 
           n      = 2, 
-          begin  = .2, 
-          end    = .8
+          begin  = 0.2, 
+          end    = 0.8
         ), 
         domain  = shp_all$survey.area$survey_definition_id,
         na.color = "transparent"
@@ -44,15 +44,16 @@ s_test <- function(id) {
           lng  = -165.5,
           zoom = 4
         ) %>%
+        # Land masses (i.e., Alaska)
         addPolygons(
           data = rnaturalearth::ne_countries(
             scale       = "medium", 
             returnclass = "sf"
           ) %>% 
           st_transform(crs = "+proj=longlat +datum=WGS84"),
-          weight       = .5, 
+          weight       = 0.5, 
           color        = "black", 
-          opacity      = .5,
+          opacity      = 0.5,
           fillOpacity  = 0.7,
           smoothFactor = 0.5,
           label        = ~paste(name),
@@ -68,8 +69,8 @@ s_test <- function(id) {
           color          = "#444444",
           opacity        = 1,
           fillColor      = ~pal(survey_definition_id),
-          fillOpacity  = 0.2,
-          smoothFactor = 0.5,
+          fillOpacity    = 0.2,
+          smoothFactor   = 0.5,
           label          = ~paste(survey_long),
           labelOptions   = labelOptions(direction = "auto")
         )  %>%
@@ -111,27 +112,40 @@ s_test <- function(id) {
         a <- 
           a %>% 
           addPolygons(
-            data = shp_all$survey.strata %>% 
+            data = 
+              shp_all$survey.strata %>% 
               st_transform(crs = "+proj=longlat +datum=WGS84") %>%
               dplyr::filter(
                 SRVY %in% input$survey
               ), 
-            weight           = 0.05,
-            # opacity          = 0.5,
-            color            = "black", 
-            fill             = "transparent",
-            fillColor        = "transparent",
-            # fillOpacity      = 0.01,
-            label = paste0(
-              "Stratum: ", 
+            weight    = 0.075,
+            color     = "black", 
+            fill      = "transparent",
+            fillColor = "transparent",
+            label     =  paste0(
+              "Stratum: ",
               dplyr::filter(
-                shp_all$survey.strata, 
+                shp_all$survey.strata,
                 SRVY %in% input$survey
               )$stratum
             ),
+            # Can toggle this on to have blank labels for those with NA stratum
+            # label     = ifelse(
+            #   !is.na(dplyr::filter(
+            #     shp_all$survey.strata, 
+            #     SRVY %in% input$survey
+            #   )$stratum),
+            #   paste0(
+            #   "Stratum: ", 
+            #   dplyr::filter(
+            #     shp_all$survey.strata, 
+            #     SRVY %in% input$survey
+            #   )$stratum
+            #   ),
+            #   ""
+            # ),
             highlightOptions = highlightOptions(
               fillColor    = 'grey50',
-              # opacity      = 0.5, 
               fill         = 'grey50',
               bringToFront = TRUE
             )
@@ -145,15 +159,12 @@ s_test <- function(id) {
         a <-
           a %>%
           addPolygons( 
-          # addCircleMarkers( 
             data = shp_all$survey.grid %>%
               st_transform(crs = "+proj=longlat +datum=WGS84") %>%
               dplyr::filter(
                 SRVY %in% input$survey
               ),
-            weight      = 1,
-            # opacity     = 0.25,
-            stroke      = 0.1,
+            weight      = 0.1,
             color       = "black",
             # fillcolor       = nmfspalette::nmfs_palette(palette = "urchin")(1),
             fillOpacity = 0.1,
