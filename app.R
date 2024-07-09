@@ -9,18 +9,20 @@ source(here::here("files_support", "data.R"))
 source(here::here("files_ui", "ui_surveymap.R"))
 source(here::here("files_ui", "ui_metadata.R"))
 source(here::here("files_ui", "ui_glossary.R"))
-source(here::here("files_ui", "ui_test.R"))
 source(here::here("files_ui", "ui_data.R"))
 # source(here::here("files_ui", "ui_plots.R"))
 source(here::here("files_ui", "ui_licencing.R"))
 source(here::here("files_ui", "ui_manual.R"))
 
+# source(here::here("files_ui", "ui_test.R"))
+
 ## Server script parsed by feature ---------------------------------------------
-source(here::here("files_server", "s_test.R"))
 source(here::here("files_server", "s_surveymap.R"))
 # source(here::here("files_server", "s_glossary.R"))
 # source(here::here("files_server", "s_data.R"))
 # source(here::here("files_server", "s_glossary.R"))
+
+# source(here::here("files_server", "s_test.R"))
 
 # User Interface ---------------------------------------------------------------
 ## Define -----------------------------------------------------------------------
@@ -94,12 +96,12 @@ sidebar =
     
     ### Sidebar menu items -----------------------------------------------------
     sidebarMenu(
-      # Bottom trawl survey progress map(s) TEST
-      menuItem(
-        "Test", 
-        tabName = "test", 
-        icon    = icon("globe")
-      ),
+      # # Bottom trawl survey progress map(s) TEST
+      # menuItem(
+      #   "Test", 
+      #   tabName = "test", 
+      #   icon    = icon("globe")
+      # ),
       # Bottom trawl survey progress map(s)
       menuItem(
         "Survey Map", 
@@ -171,8 +173,8 @@ body <-
     tabItems(
       # Bottom trawl survey progress map(s) TEST
       tabItem(
-        tabName = "test", 
-        ui_test("maptest")           
+        tabName = "surveymap", 
+        ui_surveymap("maptest")           
       )
       # # Bottom trawl survey progress map(s)
       # tabItem(
@@ -237,7 +239,7 @@ ui <-
 
 # Server -----------------------------------------------------------------------
 server <- function(input, output, session){
-  s_test("maptest")
+  s_surveymap("maptest")
 }
 
 shinyApp(ui, server)
