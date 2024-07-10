@@ -23,22 +23,20 @@ ui_surveymap <- function(id) {
           selected = 2023, # FOR TESTING
           multiple = FALSE
         ),
-        selectInput(
+        checkboxGroupInput(
           inputId  = ns("survey"),
           label    = "Survey",
-          choices  = sort(
+          choiceNames = sort(
             unique(
-              # Removes "NEBS" if present in the list
-              grep(
-                "NEBS",
-                shp_all$survey.area$SRVY,
-                invert = TRUE,
-                value  = TRUE
-              )
+              shp_all$survey.area$survey_long
             )
           ),
-          selected = c("EBS", "NBS"),
-          multiple = TRUE
+          choiceValues = sort(
+            unique(
+              shp_all$survey.area$SRVY
+            )
+          ),
+          selected = c("EBS", "NBS")
         ),
         selectInput(
           inputId = ns("plot_display"),
