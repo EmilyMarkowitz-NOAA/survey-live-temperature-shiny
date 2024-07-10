@@ -2,20 +2,30 @@ s_surveymap <- function(id) {
   moduleServer(id, function(input, output, session) {
    
     ## MAY NEED TO MOVE TO DATA.R or APP.R file
-    shp_all$survey.area <- 
-      dplyr::mutate(
-        shp_all$survey.area,
-        survey_long = dplyr::case_when(
-          SRVY == "AI"  ~ "Aleutian Islands", 
-          SRVY == "BSS" ~ "Bering Sea Slope", 
-          SRVY == "EBS" ~ "Eastern Bering Sea",  
-          SRVY == "GOA" ~ "Gulf of Alaska",  
-          SRVY == "NBS" ~ "Northern Bering Sea"
-        )
-      )
+    # shp_all$survey.area <- 
+    #   dplyr::mutate(
+    #     shp_all$survey.area,
+    #     survey_long = dplyr::case_when(
+    #       SRVY == "AI"  ~ "Aleutian Islands", 
+    #       SRVY == "BSS" ~ "Bering Sea Slope", 
+    #       SRVY == "EBS" ~ "Eastern Bering Sea",  
+    #       SRVY == "GOA" ~ "Gulf of Alaska",  
+    #       SRVY == "NBS" ~ "Northern Bering Sea"
+    #     )
+    #   )
     
-    # Survey region shapefile color palette
-    pal <- 
+    ## PREAMBLE TESTING
+    df0 <-
+      reactive({
+        dat %>%
+        dplyr::filter(
+          year == input$year &
+            SRVY %in% input$survey
+        )
+      })
+    
+    # Survey regions color palette
+    pal_shp <- 
       colorNumeric(
         viridis(
           option = "G", 
@@ -25,6 +35,23 @@ s_surveymap <- function(id) {
         ), 
         domain  = shp_all$survey.area$survey_definition_id,
         na.color = "transparent"
+      )
+    
+    # Temperature color palette
+    pal_tmp <-
+      leaflet::colorNumeric(
+        palette = viridis_pal(
+          begin  = .2,
+          end    = .8,
+          option = "B"
+        )(2),
+        domain = c(-2, 12),
+        na.color = viridis(
+          n      = 1,
+          begin  = .8,
+          end    = .8,
+          option = "B"
+        )
       )
     
     output$mymap <- renderLeaflet({
@@ -41,10 +68,10 @@ s_surveymap <- function(id) {
         ) %>%
         setView(
           lat  = 59.5,
-          lng  = -165.5,
-          zoom = 4
+          lng  = -172.0,
+          zoom = 5
         ) %>%
-        # Land masses (i.e., Alaska)
+        # Land mass polygons (i.e., Alaska)
         addPolygons(
           data = rnaturalearth::ne_countries(
             scale       = "medium", 
@@ -59,6 +86,7 @@ s_surveymap <- function(id) {
           label        = ~paste(name),
           labelOptions = labelOptions(direction = "auto")
         ) %>%
+        # Survey region polygons
         addPolygons(
           data = shp_all$survey.area %>%
             st_transform(crs = "+proj=longlat +datum=WGS84") %>%
@@ -68,7 +96,7 @@ s_surveymap <- function(id) {
           weight         = 1,
           color          = "#444444",
           opacity        = 1,
-          fillColor      = ~pal(survey_definition_id),
+          fillColor      = ~pal_shp(survey_definition_id),
           fillOpacity    = 0.2,
           smoothFactor   = 0.5,
           label          = ~paste(survey_long),
@@ -106,9 +134,8 @@ s_surveymap <- function(id) {
           )
         )
       
-      ## ADD STRATUM POLYGON? -----------------
+      ## ADD STRATUM POLYGONS -----------------
       if (input$stratum) {
-        
         a <- 
           a %>% 
           addPolygons(
@@ -118,7 +145,7 @@ s_surveymap <- function(id) {
               dplyr::filter(
                 SRVY %in% input$survey
               ), 
-            weight    = 0.075,
+            weight    = 0.25,
             color     = "black", 
             fill      = "transparent",
             fillColor = "transparent",
@@ -150,12 +177,21 @@ s_surveymap <- function(id) {
               bringToFront = TRUE
             )
           )
-      } else{
+      } else {
         a
       }
       
-      # ADD STATION POINTS? ---------------------
+      # ADD STATION POINTS ---------------------
       if (input$station) {
+        
+        stn_clr <- 
+          reactive({
+            if (input$plot_unit == "bottom_temperature_c") {
+              
+            }
+          })
+        
+        
         a <-
           a %>%
           addPolygons( 
@@ -164,9 +200,9 @@ s_surveymap <- function(id) {
               dplyr::filter(
                 SRVY %in% input$survey
               ),
-            weight      = 0.1,
+            weight      = 0.25,
             color       = "black",
-            # fillcolor       = nmfspalette::nmfs_palette(palette = "urchin")(1),
+            # color   = nmfspalette::nmfs_palette(palette = "urchin")(1),
             fillOpacity = 0.1,
             # popup       = paste(
             #   "<strong>Survey:</strong> ", df1$survey, "<br>",

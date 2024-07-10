@@ -1,5 +1,4 @@
-
-ui.about <- function() {
+ui_about <- function() {
   tabItem(
     tabName = "about",
     fluidRow(

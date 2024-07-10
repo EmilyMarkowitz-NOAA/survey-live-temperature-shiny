@@ -325,6 +325,22 @@ if (doihaveinternet) {
     )
   
   load(here::here("data","backupdata.rdat"))
+  
+  # Shapefiles -------------------------------------------------------------------
+  
+  load(file = here::here("data", "shp_all.rdata"))
+  
+  shp_all$survey.area <- 
+    dplyr::mutate(
+      shp_all$survey.area,
+      survey_long = dplyr::case_when(
+        SRVY == "AI"  ~ "Aleutian Islands", 
+        SRVY == "BSS" ~ "Bering Sea Slope", 
+        SRVY == "EBS" ~ "Eastern Bering Sea",  
+        SRVY == "GOA" ~ "Gulf of Alaska",  
+        SRVY == "NBS" ~ "Northern Bering Sea"
+      )
+    )
 }
 # Combined haul data --------------------------------------------------------------------
 
@@ -373,6 +389,4 @@ dat <- dplyr::bind_rows(dat_haul_oracleraw, dat_haul_api)  %>%
   #     ((SRVY %in% c("AI", "GOA") & surface_temperature_c != 0) | (SRVY %in% c("EBS", "NBS"))) & 
   #     ((SRVY %in% c("AI", "GOA") & bottom_temperature_c != 0) | (SRVY %in% c("EBS", "NBS")))) %>% 
 
-# Shapefiles -------------------------------------------------------------------
 
-load(file = here::here("data", "shp_all.rdata"))
