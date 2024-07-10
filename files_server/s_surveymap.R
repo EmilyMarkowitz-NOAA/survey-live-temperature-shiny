@@ -63,7 +63,8 @@ s_surveymap <- function(id) {
               code        = "EPSG:3338",
               proj4def    = "+proj=aea +lat_1=55 +lat_2=65 +lat_0=50 +lon_0=-154 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs",
               resolutions = 2^(16:7)
-            )
+            ),
+            minZoom = 4
           ) 
         ) %>%
         setView(
@@ -74,6 +75,7 @@ s_surveymap <- function(id) {
         # Land mass polygons (i.e., Alaska)
         addPolygons(
           data = rnaturalearth::ne_countries(
+            country     = c("United States of America", "Canada", "Russia"),
             scale       = "medium", 
             returnclass = "sf"
           ) %>% 
