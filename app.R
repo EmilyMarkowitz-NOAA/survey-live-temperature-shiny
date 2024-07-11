@@ -7,7 +7,6 @@ source(here::here("files_support", "data.R"))
 
 ## UI scripts parsed by feature ------------------------------------------------
 source(here::here("files_ui", "ui_surveymap.R"))
-source(here::here("files_ui", "ui_surveymapcontrolbar.R"))
 source(here::here("files_ui", "ui_metadata.R"))
 source(here::here("files_ui", "ui_glossary.R"))
 source(here::here("files_ui", "ui_data.R"))
@@ -46,28 +45,6 @@ subtitle0 <-  "NOAA Fisheries scientists share information on ocean temperatures
 ## Header ----------------------------------------------------------------------
 header <-
   shinydashboardPlus::dashboardHeader(
-  ## Possible solution to force collapse button to left of Title, however it
-  ## creates a weird word-wrapping scenario that is really unpleasant
-    # title = "",
-    # tags$li(
-    #   class = "dropdown",
-    #   id = "logo",
-    #   tags$a(
-    #   # href = 'https://www.fisheries.noaa.gov/',
-    #   tags$img(src="FISHERIES-Logo WEB ONLY.png", width = '90'),
-    #   HTML(title0),
-    #   style =
-    #     paste0(
-    #       "text-align: right;
-    #       color: #10497e;
-    #       font-weight: bold;
-    #       font-size: 20px;
-    #       font-family: Arial Narrow"
-    #     )
-    #   ),
-    #   tags$style(css)
-    # ),
-    # 
     title = tags$a(
       href = 'https://www.fisheries.noaa.gov/',
       tags$img(src="FISHERIES-Logo WEB ONLY.png", width = '90'),
@@ -243,10 +220,6 @@ body <-
   )
 
 ## Controlbar ------------------------------------------------------------------
-# controlbar <-
-#   dashboardControlbar(
-#     ui_surveymapcontrolbar('id_surveymap')
-#   )
 
 ## Call ---------------------------------------------------
 ui <- 
@@ -254,7 +227,6 @@ ui <-
     header, 
     sidebar, 
     body,
-    # controlbar
   )
 
 # Server -----------------------------------------------------------------------
