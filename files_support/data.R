@@ -8,7 +8,7 @@ library(dplyr)
 options(scipen = 999)
 
 
-doihaveinternet <- FALSE
+doihaveinternet <- TRUE
 
 if (doihaveinternet) {
   # link to the Haul API
@@ -224,6 +224,11 @@ if (doihaveinternet) {
       dplyr::rename(
         date = EDIT_DATE_TIME
       ) %>%
+        # Removes erroneous entry where LAT/LON are 0, which causes a failure in
+        # the next step
+      dplyr::filter(
+        LATITUDE_DD_START != 0 | LONGITUDE_DD_START !=0
+      ) %>%
       dplyr::mutate(
         # date = format(as.Date(date), format = c("%Y-%m-%d %H:%M")),
         LONGITUDE_DD_START = ddm2dd(LONGITUDE_DD_START), 
@@ -287,14 +292,17 @@ if (doihaveinternet) {
           FROM RACE_DATA.SURVEYS;")
         ), 
       by = "SURVEY_ID"
-    ) %>%  
+    ) %>%
       
     janitor::clean_names() %>% 
     dplyr::select(
       -survey_id, 
       -cruise_id, 
       -haul_id
-    ) %>%
+    )
+    # ) %>%
+    # THIS IS THE LEFT_JOIN PROBLEM - broke pipe here for testing purposes
+    ## `survey_definition_id` are not matching fields
     dplyr::left_join(
       x = ., 
       y = dat_surveys %>%
