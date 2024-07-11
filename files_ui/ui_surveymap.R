@@ -19,8 +19,8 @@ ui_surveymap <- function(id) {
           inputId  = ns("year"),
           label    = "Year",
           choices  = sort(unique(dat$year)),
-          # selected = max(dat$year),
-          selected = 2023, # FOR TESTING
+          selected = max(dat$year),
+          # selected = 2023, # FOR TESTING
           multiple = FALSE
         ),
         checkboxGroupInput(

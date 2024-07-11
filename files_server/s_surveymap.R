@@ -1,19 +1,6 @@
 s_surveymap <- function(id) {
   moduleServer(id, function(input, output, session) {
    
-    ## MAY NEED TO MOVE TO DATA.R or APP.R file
-    # shp_all$survey.area <- 
-    #   dplyr::mutate(
-    #     shp_all$survey.area,
-    #     survey_long = dplyr::case_when(
-    #       SRVY == "AI"  ~ "Aleutian Islands", 
-    #       SRVY == "BSS" ~ "Bering Sea Slope", 
-    #       SRVY == "EBS" ~ "Eastern Bering Sea",  
-    #       SRVY == "GOA" ~ "Gulf of Alaska",  
-    #       SRVY == "NBS" ~ "Northern Bering Sea"
-    #     )
-    #   )
-    
     ## PREAMBLE TESTING
     df0 <-
       reactive({
