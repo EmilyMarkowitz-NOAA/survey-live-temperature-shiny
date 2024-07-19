@@ -1,7 +1,8 @@
 # Source scripts ---------------------------------------------------------------
 ## Support scripts -------------------------------------------------------------
 source(here::here("files_support", "style.R")) 
-source(here::here("files_support", "functions.R"))
+source(here::here("files_support", "packages.R"))
+# source(here::here("files_support", "functions.R"))
 # source(here::here("files_support", "data_dl.R"))
 source(here::here("files_support", "data.R"))
 
@@ -19,7 +20,6 @@ source(here::here("files_ui", "ui_manual.R"))
 source(here::here("files_server", "s_surveymap.R"))
 source(here::here("files_server", "s_glossary.R"))
 # source(here::here("files_server", "s_data.R"))
-# source(here::here("files_server", "s_glossary.R"))
 
 # User Interface ---------------------------------------------------------------
 ## Define -----------------------------------------------------------------------

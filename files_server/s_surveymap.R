@@ -153,6 +153,26 @@ s_surveymap <- function(id) {
           )
         )
       
+      if (input$plot_unit == "bottom_temperature_c") {
+        a <- 
+          a %>%
+          addPolygons(
+            data = dat %>%
+              st_transform(crs = "+proj=longlat +datum=WGS84") %>%
+              dplyr::filter(
+                SRVY %in% input$survey &
+                  year == input$year
+              ) %>%
+              dplyr::filter(
+                SRVY %!in% c("AI", "GOA")
+              ),
+            weight = 0.25,
+            # color  = ~pal_tmp(bot_bin)
+          )
+      } else {
+        a
+      }
+      
       ## ADD STRATUM POLYGONS -----------------
       if (input$stratum) {
         a <- 
@@ -207,13 +227,6 @@ s_surveymap <- function(id) {
       
       # ADD STATION POINTS ---------------------
       if (input$station) {
-        
-        stn_clr <- 
-          reactive({
-            if (input$plot_unit == "bottom_temperature_c") {
-              
-            }
-          })
         
         a <-
           a %>%
