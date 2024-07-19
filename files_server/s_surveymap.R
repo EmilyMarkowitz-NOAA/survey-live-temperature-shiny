@@ -1,6 +1,9 @@
 s_surveymap <- function(id) {
   moduleServer(id, function(input, output, session) {
    
+    ## Define unique operator
+    `%!in%` <- Negate(`%in%`)
+    
     ## PREAMBLE TESTING
     df0 <-
       reactive({
@@ -16,11 +19,11 @@ s_surveymap <- function(id) {
       colorNumeric(
         viridis(
           option = "G", 
-          n      = 2, 
+          n      = length(unique(shp_all$survey.area$survey_definition_id)), 
           begin  = 0.2, 
           end    = 0.8
         ), 
-        domain  = shp_all$survey.area$survey_definition_id,
+        domain   = shp_all$survey.area$survey_definition_id,
         na.color = "transparent"
       )
     
@@ -28,19 +31,20 @@ s_surveymap <- function(id) {
     pal_tmp <-
       leaflet::colorNumeric(
         palette = viridis_pal(
-          begin  = .2,
-          end    = .8,
+          begin  = 0.2,
+          end    = 0.8,
           option = "B"
         )(2),
         domain = c(-2, 12),
         na.color = viridis(
           n      = 1,
-          begin  = .8,
-          end    = .8,
+          begin  = 0.8,
+          end    = 0.8,
           option = "B"
         )
       )
     
+    # Build the map
     output$mymap <- renderLeaflet({
       a <- 
         leaflet(
@@ -51,7 +55,9 @@ s_surveymap <- function(id) {
               proj4def    = "+proj=aea +lat_1=55 +lat_2=65 +lat_0=50 +lon_0=-154 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs",
               resolutions = 2^(16:7)
             ),
-            minZoom = 4
+            minZoom = 4,
+            zoomSnap = 0.5,
+            zoomDelta = 0.5
           ) 
         ) %>%
         setView(
@@ -59,22 +65,46 @@ s_surveymap <- function(id) {
           lng  = -172.0,
           zoom = 5
         ) %>%
+        addScaleBar(
+          position = "bottomright"
+        ) %>%
         # Land mass polygons (i.e., Alaska)
         addPolygons(
           data = rnaturalearth::ne_countries(
             country     = c("United States of America", "Canada", "Russia"),
-            scale       = "medium", 
+            scale       = "medium",
             returnclass = "sf"
-          ) %>% 
+          ) %>%
           st_transform(crs = "+proj=longlat +datum=WGS84"),
-          weight       = 0.5, 
-          color        = "black", 
+          weight       = 0.5,
+          color        = "black",
           opacity      = 0.5,
           fillOpacity  = 0.7,
           smoothFactor = 0.5,
           label        = ~paste(name),
           labelOptions = labelOptions(direction = "auto")
         ) %>%
+        # # Add map graticules
+        # addPolylines(
+        #   data = shp_all$graticule %>%
+        #     st_transform(crs = "+proj=longlat +datum=WGS84"),
+        #   weight = 1,
+        #   color  = "#000000",
+        #   label  = ~paste(degree),
+        #   labelOptions = labelOptions(direction = "auto")
+        # ) %>%
+        # # Add bathymetric countours
+        # addPolylines(
+        #   data = shp_all$bathymetry %>%
+        #     st_transform(crs = "+proj=longlat +datum=WGS84") %>%
+        #     dplyr::filter(
+        #       SRVY %in% input$survey
+        #     ),
+        #   weight = 2, 
+        #   color  = "#000000",
+        #   label  = ~paste(meters),
+        #   labelOptions = labelOptions(direction = "auto")
+        # ) %>%
         # Survey region polygons
         addPolygons(
           data = shp_all$survey.area %>%
@@ -133,6 +163,11 @@ s_surveymap <- function(id) {
               st_transform(crs = "+proj=longlat +datum=WGS84") %>%
               dplyr::filter(
                 SRVY %in% input$survey
+              ) %>%
+              # AI and GOA strata are NA and cause performance issues. So,
+              # better to not have the map render those polygons.
+              dplyr::filter(
+                SRVY %!in% c("AI", "GOA")
               ), 
             weight    = 0.25,
             color     = "black", 
@@ -180,27 +215,34 @@ s_surveymap <- function(id) {
             }
           })
         
-        
         a <-
           a %>%
           addPolygons( 
-            data = shp_all$survey.grid %>%
-              st_transform(crs = "+proj=longlat +datum=WGS84") %>%
-              dplyr::filter(
-                SRVY %in% input$survey
-              ),
-            weight      = 0.25,
-            color       = "black",
-            # color   = nmfspalette::nmfs_palette(palette = "urchin")(1),
-            fillOpacity = 0.1,
-            # popup       = paste(
-            #   "<strong>Survey:</strong> ", df1$survey, "<br>",
-            #   "<strong>Data State:</strong> ", df1$data_type,  "<br>",
-            #   "<strong>Station:</strong> ", shp_stn$station, "<br>",
-            #   "<strong>Stratum:</strong> ", shp_stn$stratum,  "<br>",
-            #   "<strong>Latitude (&degN):</strong> ", round(shp_stn$lat, 2),  "<br>",
-            #   "<strong>Longitude (&degW):</strong> ", round(shp_stn$lon, 2),  "<br>"
-            # )
+              data = shp_all$survey.grid %>%
+                st_transform(crs = "+proj=longlat +datum=WGS84") %>%
+                dplyr::filter(
+                  SRVY %in% input$survey
+                ) %>%
+                # AI and GOA Points are densely packed, causing performance
+                # issues, and less important to temperature data. So, better to
+                # not have the map render those polygons
+                dplyr::filter(
+                  SRVY %!in% c("AI", "GOA")
+                ),
+              weight      = 0.25,
+              color       = "black",
+              fillColor   = "black",
+              label       = ~station,
+              # color   = nmfspalette::nmfs_palette(palette = "urchin")(1),
+              fillOpacity = 0.1,
+              # popup       = paste(
+              #   "<strong>Survey:</strong> ", df1$survey, "<br>",
+              #   "<strong>Data State:</strong> ", df1$data_type,  "<br>",
+              #   "<strong>Station:</strong> ", shp_stn$station, "<br>",
+              #   "<strong>Stratum:</strong> ", shp_stn$stratum,  "<br>",
+              #   "<strong>Latitude (&degN):</strong> ", round(shp_stn$lat, 2),  "<br>",
+              #   "<strong>Longitude (&degW):</strong> ", round(shp_stn$lon, 2),  "<br>"
+              # )
           )
       } else {
         a
