@@ -471,18 +471,91 @@ dat <-
 
 load(file = here::here("data", "shp_all.rdata"))
 
-# temp <- left_join(
-#   x = dat,
-#   y =
-#     dplyr::select(
-#       shp_all$survey.grid,
-#       station,
-#       geometry
-#     ),
-#   by = c(
-#     join_by(station == station),
-#     join_by(SRVY == SRVY)
-#   ),
-#   relationship = "many-to-many"
-# ) %>%
-# st_sf()
+temp_storage <- shp_all$survey.grid 
+
+var_breaks <- c(-10, seq(from = -2, to = 8, by = 1), 50)
+
+var_labels <- c()
+for(i in 2:c(length(var_breaks))) {
+  var_labels <- c(var_labels, 
+                  dplyr::case_when(
+                    i==2 ~ paste0("\u2264 ",# "≤ ", #
+                                  var_breaks[i]), # ,"\u00B0C" <=
+                    i==(length(var_breaks)) ~ paste0("> ", var_breaks[i-1]), # , "\u00B0C"
+                    TRUE ~ paste0("> ",
+                                  var_breaks[i-1],"\u2013",var_breaks[i]) # ,"\u00B0C" "\u00B0"
+                  ))
+}
+
+var_color <- 
+  viridis::viridis_pal(
+    begin  = 0.2, 
+    end    = 0.9, 
+    option = "B"
+  )(length(var_labels))
+
+# Parse apart station and corner polygons. This allows corner stations to be
+# overlayed in those years when corner station data are available, else the full
+# survey grid is displayed
+shp_all$survey.grid <- 
+  bind_rows(
+    shp_all$survey.grid %>%
+      filter(
+        grepl("-", station),
+        is.na(comment)
+      ),
+    shp_all$survey.grid %>%
+      filter(
+        !grepl("-", station)
+      )
+  )
+
+dat <- 
+  left_join(
+    x = dat,
+    y =
+      dplyr::select(
+        shp_all$survey.grid,
+        station,
+        geometry, 
+        comment
+      ),
+    by = c(
+      join_by(station == station),
+      join_by(SRVY == SRVY)
+    ),
+    relationship = "many-to-many"
+  ) %>%
+  mutate(
+    bot_bin = base::cut(
+      x = as.numeric(bottom_temperature_c), 
+      breaks = var_breaks, 
+      labels = FALSE,
+      include.lowest = TRUE,
+      right = FALSE
+    ),
+    .after = bottom_temperature_c
+  ) %>%
+  mutate(
+    sur_bin = base::cut(
+      x = as.numeric(surface_temperature_c), 
+      breaks = var_breaks, 
+      labels = FALSE,
+      include.lowest = TRUE,
+      right = FALSE
+    ),
+    .after = surface_temperature_c
+  ) %>%
+  mutate(
+    bot_bin = base::factor(
+      x = var_labels[bot_bin],
+      levels = var_labels,
+      labels = var_labels,
+    ),
+    sur_bin = base::factor(
+      x = var_labels[sur_bin],
+      levels = var_labels,
+      labels = var_labels,
+    )
+  ) %>%
+  st_as_sf()
