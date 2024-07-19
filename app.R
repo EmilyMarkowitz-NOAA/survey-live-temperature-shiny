@@ -81,15 +81,21 @@ header <-
       headerText  = "See also:",
       notificationItem(
         "NOAA Fisheries",
-        icon = icon("fish"),
+        icon   = icon("fish"),
         status = "info", # TOLEDO
-        href = "https://www.fisheries.noaa.gov/"
+        href   = "https://www.fisheries.noaa.gov/"
       ),
       notificationItem(
         "AFSC RACE Division",
-        icon = icon("ship"),
+        icon   = icon("circle-info"),
         status = "info",
-        href = "https://www.fisheries.noaa.gov/about/resource-assessment-and-conservation-engineering-division"
+        href   = "https://www.fisheries.noaa.gov/about/resource-assessment-and-conservation-engineering-division"
+      ),
+      notificationItem(
+        "Groundfish Assessment Program",
+        icon   = icon("ship"),
+        status = "info",
+        href   = "https://www.fisheries.noaa.gov/alaska/science-data/groundfish-assessment-program-bottom-trawl-surveys"
       )
     )
   )
@@ -141,7 +147,7 @@ sidebar =
         icon    = icon("book"),
         # About
         menuSubItem(
-          "About", 
+          "About application", 
           tabName = "about",
         ), 
         # Export predictions
