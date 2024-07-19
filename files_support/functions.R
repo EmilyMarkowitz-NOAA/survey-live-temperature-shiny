@@ -151,68 +151,61 @@ link_repo_web <- "https://afsc-gap-products.github.io/gap_products/"
 link_code_books <- "https://www.fisheries.noaa.gov/resource/document/groundfish-survey-species-code-manual-and-data-codes-manual"
 pretty_date <- format(Sys.Date(), "%B %d, %Y")
 licence0 <- "Software code created by U.S. Government employees is not subject to copyright in the United States (17 U.S.C. §105). The United States/Department of Commerce reserve all rights to seek and obtain copyright protection in countries other than the United States for Software authored in its entirety by the Department of Commerce. To this end, the Department of Commerce hereby grants to Recipient a royalty-free, nonexclusive license to use, copy, and create derivative works of the Software outside of the United States."
-NOAA.Fonts<-"Proxima Nova"
+NOAA.Fonts <- "Proxima Nova"
 
 # Color pallet -----------------------------------------------------------------
 
-NOAAFisheries.Colors<-list(
-  
-  Oceans = list(
-  "Process Blue" = "#0093D0", 
-  "Reflex Blue" = "#0055A4", #Nav Bar Hover
-  "PMS 541" = "#00467F", # Nav Bar
-  "White" = "#FFFFFF"
-  ), 
-  
-  Waves = list(
-  "PMS 319" = "#1ECAD3", 
-  "PMS 321" = "#008998", 
-  "PMS 322" = "#00708", 
-  "Gray 10%" = "#E8E8E8"
-  ),
-
-  Seagrass = list(
-  "PMS 375" = "#93D500", 
-  "PMS 362" = "#4C9C2E", 
-  "PMS 322" = "#007078", 
-  "Gray 20%" = "#D0D0D0"
-  ), 
-  
-  Urchin = list(
-  "Custom" = "#7F7FFF", 
-  "PMS 2725" = "#625BC4", 
-  "PMS 7670" = "#575195",
-  "Gray 40%" = "#9A9A9A"
-  ), 
-  
-  Crustacean = list(
-    "PMS 151" = "#FF8300", 
-    "PMS 717" = "#D65F00", 
-    "PMS 7670" = "#575195", 
-    "Gray 50%" = "#7B7B7B"
-  ), 
-  
-  Coral = list(
-    "Warm Red" = "#FF4438", 
-    "PMS 711" = "D02C2F", 
-    "PMS 1805" = "#B2292E", 
-    "Gray 70%" = "#646464"
-  ),
+NOAAFisheries.Colors <- 
+  list(
+    Oceans = list(
+      "Process Blue" = "#0093D0", 
+      "Reflex Blue"  = "#0055A4", # Nav Bar Hover
+      "PMS 541"      = "#00467F", # Nav Bar
+      "White"        = "#FFFFFF"
+    ), 
+    Waves = list(
+      "PMS 319"  = "#1ECAD3", 
+      "PMS 321"  = "#008998", 
+      "PMS 322"  = "#00708", 
+      "Gray 10%" = "#E8E8E8"
+    ),
+    Seagrass = list(
+      "PMS 375"  = "#93D500", 
+      "PMS 362"  = "#4C9C2E", 
+      "PMS 322"  = "#007078", 
+      "Gray 20%" = "#D0D0D0"
+    ), 
+    Urchin = list(
+      "Custom"   = "#7F7FFF", 
+      "PMS 2725" = "#625BC4", 
+      "PMS 7670" = "#575195",
+      "Gray 40%" = "#9A9A9A"
+    ), 
+    Crustacean = list(
+      "PMS 151"  = "#FF8300", 
+      "PMS 717"  = "#D65F00", 
+      "PMS 7670" = "#575195", 
+      "Gray 50%" = "#7B7B7B"
+    ), 
+    Coral = list(
+      "Warm Red" = "#FF4438", 
+      "PMS 711"  = "D02C2F", 
+      "PMS 1805" = "#B2292E", 
+      "Gray 70%" = "#646464"
+    ),
   
   "NOAA Colors" = list(
-  
   #Primary Colors
-  "REFLEX BLUE" = "#0A4595", 
-  "PROCESS BLUE" = "#0099D8", 
-  "DARK SLATE GREY" = "#333333", 
-  "WHITE" = "#FFFFFF", 
-  
+    "REFLEX BLUE"     = "#0A4595", 
+    "PROCESS BLUE"    = "#0099D8", 
+    "DARK SLATE GREY" = "#333333", 
+    "WHITE"           = "#FFFFFF", 
   #Secondary Colors
-  "DARK GREY" = "#575757", 
-  "MEDIUM GREY" = "#666666",
-  "LIGHT GREY" = "#ACACAC",
-  "FADED BLUE" = "#6B84B4",
-  "RICH BLUE GREY" = "#28282A"
+    "DARK GREY"       = "#575757", 
+    "MEDIUM GREY"     = "#666666",
+    "LIGHT GREY"      = "#ACACAC",
+    "FADED BLUE"      = "#6B84B4",
+    "RICH BLUE GREY"  = "#28282A"
   )
 
 )
@@ -220,12 +213,48 @@ NOAAFisheries.Colors<-list(
 # Functions --------------------------------------------------------------------
 
 # https://stackoverflow.com/questions/37446283/creating-legend-with-circles-leaflet-r
-addLegendCustom <- function(map, position = "bottomright", title = "", colors, labels, sizes, opacity = 0.5){
-  colorAdditions <- paste0(colors, "; width:", sizes, "px; height:", sizes, "px")
-  labelAdditions <- paste0("<div style='display: inline-block;height: ", sizes, "px;margin-top: 4px;line-height: ", sizes, "px;'>", labels, "</div>")
-  
-  return(addLegend(map, position = position, title = title, colors = colorAdditions, labels = labelAdditions, opacity = opacity))
-}
+addLegendCustom <- 
+  function(
+    map, 
+    position = "bottomright", 
+    title = "", 
+    colors, 
+    labels, 
+    sizes, 
+    opacity = 0.5
+  ){
+    colorAdditions <- 
+      paste0(
+        colors, 
+        "; width:", 
+        sizes, 
+        "px; height:", 
+        sizes, 
+        "px"
+      )
+    
+    labelAdditions <- 
+      paste0(
+        "<div style='display: inline-block;height: ", 
+        sizes, 
+        "px;margin-top: 4px;line-height: ", 
+        sizes, 
+        "px;'>", 
+        labels, 
+        "</div>"
+      )
+    
+    return(
+      addLegend(
+        map, 
+        position = position, 
+        title = title, 
+        colors = colorAdditions, 
+        labels = labelAdditions, 
+        opacity = opacity
+      )
+    )
+  }
 
 
 #' Wrapper function to produce daily or anomaly plots
@@ -2242,22 +2271,42 @@ format_date_txt <- function(x = "1998-09-02", format0 = "%B %d") {
 #' text_list(c(1,2,"hello",4,"world",6), oxford = FALSE)
 #' paste0("here is a list of things: ",
 #'   text_list(paste0("list", 1:5), sep = " ", sep_last = ""))
-text_list <-function(x = "",
-                    oxford = TRUE,
-                    sep = ", ",
-                    sep_last = "and ") {
-  
-  x<-x[which(x!="")]
-  x<-x[which(!is.na(x))]
-  if (length(x)==2) {
-    str1<-paste(x, collapse = paste0(" ", sep_last))
-  } else if (length(x)>2) {
-    str1<-paste(x[1:(length(x)-1)], collapse = paste0(sep))
-    str1<-paste0(str1,
-                 ifelse(oxford == TRUE, sep, " "),
-                 sep_last, x[length(x)])
-  } else {
-    str1<-x
-  }
+text_list <- 
+  function(
+    x = "",
+    oxford = TRUE,
+    sep = ", ",
+    sep_last = "and "
+    ){
+    x <- x[which(x!="")]
+    x <- x[which(!is.na(x))]
+    if (length(x)==2) {
+      str1 <- 
+        paste(
+          x, 
+          collapse = 
+            paste0(
+              " ", 
+              sep_last
+            )
+        )
+    } else if (length(x)>2) {
+      str1 <- 
+        paste(
+          x[1:(length(x)-1)], 
+          collapse = 
+            paste0(
+              sep
+            )
+        )
+      str1 <- 
+        paste0(
+          str1,
+          ifelse(oxford == TRUE, sep, " "),
+          sep_last, x[length(x)]
+        )
+    } else {
+      str1 <- x
+    }
   return(str1)
-}
+  }
