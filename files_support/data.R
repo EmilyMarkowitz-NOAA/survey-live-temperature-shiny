@@ -1,17 +1,22 @@
-
 # Load data from FOSS API ------------------------------------------------------
 
+## Load packages ---------------------------------------------------------------
 # install.packages(c("httr", "jsonlite"))
 library(httr)
 library(jsonlite)
 library(dplyr)
 options(scipen = 999)
 
-
+# Toggle internet access -------------------------------------------------------
 doihaveinternet <- FALSE
 
+# Download FOSS data ----------------------------------------------------------
 if (doihaveinternet) {
-  # link to the Haul API
+  
+  ## lastdl = current date --------
+  lastdl <- Sys.Date()
+  
+  ## link to the Haul API --------
   api_link_haul <- "https://apps-st.fisheries.noaa.gov/ods/foss/afsc_groundfish_survey_haul/"
   
   dat_haul_api0 <- data.frame()
@@ -43,9 +48,7 @@ if (doihaveinternet) {
         data$items
       )
   }
-  # Find how many rows and columns are in the data pull
-  # print(paste0("rows: ", dim(dat)[1], "; cols: ", dim(dat)[2]))
-  
+
   # save outputs for later comparison
   dat_haul_api <- 
     dat_haul_api0 %>% 
@@ -61,19 +64,9 @@ if (doihaveinternet) {
     dplyr::select(
       -links
     )
-  
-  
-  pal <- colorFactor(
-    viridis(
-      option   = "D", 
-      n        = length(unique(dat_haul_api$vessel_name)), 
-      begin    = .2, 
-      end      = .8), 
-      ordered  = FALSE,
-      domain   = levels(unique(dat_haul_api$vessel_name)),
-      na.color = "black"
-    )
-  
+
+## Parse FOSS data -------------------------------------------------------------  
+### dat_survey_list ------------------------------------------------------------
   dat_survey_list <- 
     dat_haul_api %>% 
     dplyr::select(
@@ -84,7 +77,8 @@ if (doihaveinternet) {
     ) %>% 
     dplyr::distinct() %>% 
     dplyr::ungroup()
-  
+
+### dat_surveys ----------------------------------------------------------------  
   dat_surveys <- 
     dat_haul_api %>% 
     dplyr::select(
@@ -114,14 +108,43 @@ if (doihaveinternet) {
       vessel_id
     ) %>% 
     dplyr::summarise(
-      date_min = min(as.Date(date_time), na.rm = TRUE), 
-      date_max = max(as.Date(date_time), na.rm = TRUE))  %>% 
+      date_min = 
+        min(
+          as.Date(date_time), 
+          na.rm = TRUE
+        ), 
+      date_max = 
+        max(
+          as.Date(date_time), 
+          na.rm = TRUE
+        )
+    )  %>% 
     dplyr::mutate(
-      vessel_shape = substr(x = vessel_name, start = 1, stop = 1),
-      vessel_ital  = paste0("F/V *", stringr::str_to_title(vessel_name), "*"), 
-      vessel_name  = paste0("F/V ", stringr::str_to_title(vessel_name)), 
-      survey       = survey_name, 
-      survey_dates = paste0(format(date_min, "%B %d"), " - ", format(date_max, "%B %d, %Y"))
+      vessel_shape = 
+        substr(
+          x     = vessel_name, 
+          start = 1, 
+          stop  = 1
+        ),
+      vessel_ital = 
+        paste0(
+          "F/V *", 
+          stringr::str_to_title(vessel_name), 
+          "*"
+        ), 
+      vessel_name = 
+        paste0(
+          "F/V ", 
+          stringr::str_to_title(vessel_name)
+        ), 
+      survey = 
+        survey_name, 
+      survey_dates = 
+        paste0(
+          format(date_min, "%B %d"), 
+          " - ", 
+          format(date_max, "%B %d, %Y")
+        )
     ) %>% 
     dplyr::select(
       -date_min, 
@@ -132,26 +155,13 @@ if (doihaveinternet) {
       vessel_color = pal(vessel_name)
     )
   
-  # Load new data ----------------------------------------------------------------
-  
-  # a <- list.files(path = here::here("data"))
-  # for (i in 1:length(a)){
-  #   b <- read_csv(file = here::here("data", a[i]))
-  #   b <- janitor::clean_names(b)
-  #   if (names(b)[1] %in% "x1"){
-  #     b$x1<-NULL
-  #   }
-  #   assign(x = gsub(pattern = "\\.csv", replacement = "", x = paste0(a[i], "0")), value = b)
-  # }
-  
-  # New data ---------------------------------------------------------------------
-  
+## Oracle data -----------------------------------------------------------------
   if (file.exists("Z:/Projects/ConnectToOracle.R")) {
     source("Z:/Projects/ConnectToOracle.R")
     
     # I set up a ConnectToOracle.R that looks like this: 
     #   
-    #   PKG <- c("RODBC")
+    # PKG <- c("RODBC")
     # for (p in PKG) {
     #   if(!require(p,character.only = TRUE)) {  
     #     install.packages(p)
@@ -166,6 +176,7 @@ if (doihaveinternet) {
     # odbcGetInfo(channel)
     
   } else { # For those without a ConnectToOracle file
+    
     # # library(devtools)
     # # devtools::install_github("afsc-gap-products/gapindex")
     # library(gapindex)
@@ -186,24 +197,33 @@ if (doihaveinternet) {
     )
   }
   
+  date_max <- 
+    RODBC::sqlQuery(
+      channel, 
+      paste0("SELECT CREATE_DATE FROM RACE_DATA.EDIT_HAULS;")
+    )
+  date_max <- 
+    sort(
+      as.numeric(
+        unique(
+          unlist(
+            format(
+              date_max, 
+              format = "%Y"
+            )
+          )
+        )
+      )
+    )
+  date_max <- 
+    max(
+      date_max[date_max <= format(Sys.Date(), format = "%Y")]
+    ) 
+  # Note: sometimes there are dates that haven't happened yet b/c testing
   
-  lastdl <- Sys.Date()
-  
-  date_max <- RODBC::sqlQuery(channel, paste0("SELECT CREATE_DATE FROM RACE_DATA.EDIT_HAULS;"))
-  date_max <- sort(as.numeric(unique(unlist(format(date_max, format = "%Y")))))
-  date_max <- max(date_max[date_max<=format(Sys.Date(), format = "%Y")]) # sometimes there are dates that haven't happened yet b/c testing
-  
-  
-  # Convert from DDM to DD
-  ddm2dd <- function(xx){ 
-    x <- strsplit(x = as.character(xx/100), split = ".", fixed = TRUE)
-    min <- as.numeric(unlist(lapply(x, `[[`, 1)))
-    deg <- as.numeric(paste0(".", unlist(lapply(x, `[[`, 2))))*100
-    y <- min + deg/60
-    return(y)
-  }
-  
-  if (max(dat_surveys$year) < date_max) { # if this year's data hasn't been entered into the production data
+  ## Pull in current year ------------------------------------------------------
+  # if this year's data hasn't been entered into the production data
+  if (max(dat_surveys$year) < date_max) { 
     
     dat_haul_oracleraw <- dplyr::inner_join(
       # Pull event data
@@ -282,7 +302,7 @@ if (doihaveinternet) {
       by = "CRUISE_ID"
     ) %>%
       
-      # Add SURVEY_DEFINITION_ID
+    # Add SURVEY_DEFINITION_ID
     dplyr::left_join(
       y = RODBC::sqlQuery(
         channel, 
@@ -299,10 +319,7 @@ if (doihaveinternet) {
       -survey_id, 
       -cruise_id, 
       -haul_id
-    # )
     ) %>%
-    # THIS IS THE LEFT_JOIN PROBLEM - broke pipe here for testing purposes
-    ## `survey_definition_id` are not matching fields
     dplyr::left_join(
       x = ., 
       y = dat_surveys %>%
@@ -324,20 +341,88 @@ if (doihaveinternet) {
     dat_haul_oracleraw <- data.frame()
   }
 
-  save(dat_haul_oracleraw, dat_haul_api, date_max, file = here::here("data","backupdata.rdat"))
+  save(
+    dat_haul_oracleraw, 
+    dat_haul_api, 
+    date_max, 
+    file = here::here("data","backupdata.rdat")
+  )
 
 } else {
+  
+  ## lastdl = backup date -----------------------------------------------------
   lastdl <- 
     as.Date(
       file.info(here::here("data","backupdata.rdat"))$ctime
     )
   
-  load(here::here("data","backupdata.rdat"))
+  # Load data backup
+  load(
+    here::here("data","backupdata.rdat")
+  )
   
 }
-# Combined haul data --------------------------------------------------------------------
 
-dat <- dplyr::bind_rows(dat_haul_oracleraw, dat_haul_api)  %>% 
+#------------------------------------------------------------------------------#
+############################### END DATA IMPORT ################################
+
+
+# Convert from DDM to DD
+ddm2dd <- function(xx){ 
+  x <- 
+    strsplit(
+      x = as.character(xx/100), 
+      split = ".", 
+      fixed = TRUE
+    )
+  min <- 
+    as.numeric(
+      unlist(
+        lapply(
+          x, 
+          `[[`, 
+          1
+        )
+      )
+    )
+  deg <- 
+    as.numeric(
+      paste0(
+        ".", 
+        unlist(
+          lapply(
+            x, 
+            `[[`, 
+            2
+          )
+        )
+      )
+    )*100
+  
+  y <- min + deg/60
+  
+  return(y)
+}
+
+## Define color palette --------------------------------------------------------
+pal <- colorFactor(
+  viridis(
+    option   = "D", 
+    n        = length(unique(dat_haul_api$vessel_name)), 
+    begin    = .2, 
+    end      = .8), 
+  ordered  = FALSE,
+  domain   = levels(unique(dat_haul_api$vessel_name)),
+  na.color = "black"
+)
+
+# Combined haul data -----------------------------------------------------------
+
+dat <- 
+  dplyr::bind_rows(
+    dat_haul_oracleraw, 
+    dat_haul_api
+  )  %>% 
   dplyr::select(
     year, 
     stratum, 
@@ -382,19 +467,22 @@ dat <- dplyr::bind_rows(dat_haul_oracleraw, dat_haul_api)  %>%
   #     ((SRVY %in% c("AI", "GOA") & surface_temperature_c != 0) | (SRVY %in% c("EBS", "NBS"))) & 
   #     ((SRVY %in% c("AI", "GOA") & bottom_temperature_c != 0) | (SRVY %in% c("EBS", "NBS")))) %>% 
 
-# Shapefiles -------------------------------------------------------------------
+# Load data_dl.R shapefiles ----------------------------------------------------
 
 load(file = here::here("data", "shp_all.rdata"))
 
-# shp_all$survey.area <- 
-#   dplyr::mutate(
-#     shp_all$survey.area,
-#     survey_long = dplyr::case_when(
-#       SRVY == "AI"  ~ "Aleutian Islands", 
-#       SRVY == "BSS" ~ "Bering Sea Slope", 
-#       SRVY == "EBS" ~ "Eastern Bering Sea",  
-#       SRVY == "GOA" ~ "Gulf of Alaska",  
-#       SRVY == "NBS" ~ "Northern Bering Sea"
-#     )
-#   )
-
+# temp <- left_join(
+#   x = dat,
+#   y =
+#     dplyr::select(
+#       shp_all$survey.grid,
+#       station,
+#       geometry
+#     ),
+#   by = c(
+#     join_by(station == station),
+#     join_by(SRVY == SRVY)
+#   ),
+#   relationship = "many-to-many"
+# ) %>%
+# st_sf()
