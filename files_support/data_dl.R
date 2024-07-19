@@ -6,9 +6,8 @@
 #' Notes: Operational updates for support of Shiny application. 
 #' ---------------------------------------------
 
-# Download oracle data ----------------------------------------------------------
-
-# Connect to oracle ------------------------------------------------------------
+# Download Oracle data ---------------------------------------------------------
+## Connect to Oracle -----------------------------------------------------------
 
 PKG <- c("magrittr", "readr", "dplyr", "janitor")
 
@@ -43,7 +42,6 @@ if (file.exists("Z:/Projects/ConnectToOracle.R")) {
       believeNRows = FALSE
     )
 }
-
 
 locations <- 
   c(
@@ -145,11 +143,7 @@ for (i in 1:length(locations)){
 
 error_loading
 
-# Wrangle data -----------------------------------------------------------------
-
-# Wrangle gap_products tables to bind to shapefiles
-
-# Find the correct design year to use for each survey
+## Wrangle GAP data ------------------------------------------------------------
 
 maxyr <- 
   as.numeric(
@@ -158,6 +152,8 @@ maxyr <-
       format = "%Y"
     )
   )
+
+### Find the correct design year to use for each survey ------------------------
 
 dat_design_year <- 
   gap_products_akfin_area0 %>% 
@@ -175,8 +171,7 @@ dat_design_year <-
       )
   ) 
 
-# Summarize stratums for each survey
-
+### Summarize stratums for each survey -----------------------------------------
 dat_areas <- 
   gap_products_akfin_area0  %>% 
   # find the most up to date design_years
@@ -253,9 +248,9 @@ dat_areas <-
       )
   ) 
 
-# Summarize stratums and stations for each survey
+### Summarize stratums and stations for each survey ----------------------------
 
-# Because there is no nice, wholistic gap_products.stations (or similar) table,
+# Because there is no nice, holistic gap_products.stations (or similar) table,
 # I need to summarize this from the the haul table. Hoping to create a stations
 # table in the next round of gap_products dev.
 
@@ -294,7 +289,7 @@ dat_survey_design <-
   )
 
 # Load shapefiles --------------------------------------------------------------
-# Pull available shape data for each survey from `akgfmaps`
+## Pull available shape data for each survey from `akgfmaps` -------------------
 
 crs_out <- "EPSG:3338"
 
@@ -344,29 +339,52 @@ shp_bss <-
     set.crs = "auto"
   )
 
-## Everything will be saved in this `shp_all` object
-# 
-# Wrangle shapefiles together so they are in the same object, and have the same column/row properties
-# 
-# - Here, I am removing the bs.all specific stuff (where I can) because I am hoping it is redundant to NBS and EBS unioned, and can just be selected together by the user
+# Build shp_all data structure -------------------------------------------------
 
-
-## Survey plot lat and lon breaks (list) ---------------------------------------
-
-# > This is shared across all survey areas. For plotting purposes, you don't actually need survey-specific breaks. You can provide as many breaks as you want and it will match the appropriate break and spot
-# 
-# > A case could be made that this is not necessary to include in the object, but it also doesn't hurt to have. 
+## Everything will be saved in `shp_all` object --------------------------------
 
 shp_all <- list()
 
-shp_all$lon.breaks <- c(160, 165, 170,  175, -180, -175, -170, -165, -160, -155, -150, -145, -140, -135, -130, -125, -120)
-shp_all$lat.breaks <- seq(from = 40, to = 70, by = 2)
+## Survey plot lat and lon breaks (list) ---------------------------------------
 
-## Land (polygons) -------------------------------------------------------------
+# This is shared across all survey areas. For plotting purposes, you don't
+# actually need survey-specific breaks. You can provide as many breaks as you
+# want and it will match the appropriate break and spot
+#
+# A case could be made that this is not necessary to include in the object, but
+# it also doesn't hurt to have.
+
+
+shp_all$lon.breaks <- 
+  c(
+    seq(
+      from = 160,
+      to   = 175,
+      by   = 5
+    ),
+    seq(
+      from = -180,
+      to   = -120,
+      by   = 5
+    )
+  )
+
+shp_all$lat.breaks <- 
+  seq(
+    from = 40, 
+    to = 70, 
+    by = 2
+  )
+
+## Land mass (polygons) --------------------------------------------------------
 
 shp_all$akland <- shp_bs$akland %>%
-  sf::st_transform(crs = crs_out) %>% 
-  dplyr::rename(name = DESC_)
+  sf::st_transform(
+    crs = crs_out
+    ) %>% 
+  dplyr::rename(
+    name = DESC_
+  )
 
 shp_all$akland$name[2] <- "Alaska"
 
@@ -435,7 +453,7 @@ shp_all$survey.area <-
     survey_long = dplyr::case_when(
       SRVY == "EBS" ~ "Eastern Bering Sea",  
       SRVY == "NBS" ~ "Northern Bering Sea",
-      SRVY == "AI" ~ "Aleutian Islands", 
+      SRVY == "AI"  ~ "Aleutian Islands", 
       SRVY == "GOA" ~ "Gulf of Alaska",  
       SRVY == "BSS" ~ "Bering Sea Slope"
     )
@@ -823,7 +841,7 @@ shp_all$place.labels <-
         )
     ) 
 
-### Place names ----------------------------------------------------------------
+## Place names ----------------------------------------------------------------
 
 shp_all$place.labels <- 
   data.frame(
@@ -885,6 +903,3 @@ shp_all$place.labels <-
 # Save shapefile ---------------------------------------------------------------
 
 save(shp_all, file = here::here("data", "shp_all.rdata"))
-
-
-
