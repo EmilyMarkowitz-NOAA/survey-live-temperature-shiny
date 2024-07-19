@@ -632,27 +632,27 @@ shp_all$survey.grid <-
             ) %>% 
             dplyr::distinct()
         ),
-      # shp_ebs$survey.grid %>%
-      #   sf::st_transform(
-      #     crs = crs_out
-      #   ) %>%
-      #   dplyr::mutate(
-      #     SRVY = "EBS",
-      #     station = STATIONID
-      #   ) %>%
-      #   dplyr::left_join(
-      #     y = dat_survey_design %>%
-      #       dplyr::filter(
-      #         survey_definition_id %in% c(98)
-      #       ) %>%
-      #       dplyr::select(
-      #         SRVY, 
-      #         station, 
-      #         stratum,
-      #         survey_definition_id
-      #       ) %>%
-      #       dplyr::distinct()
-      #   ),
+      shp_ebs$survey.grid %>%
+        sf::st_transform(
+          crs = crs_out
+        ) %>%
+        dplyr::mutate(
+          SRVY = "EBS",
+          station = STATIONID
+        ) %>%
+        dplyr::left_join(
+          y = dat_survey_design %>%
+            dplyr::filter(
+              survey_definition_id %in% c(98)
+            ) %>%
+            dplyr::select(
+              SRVY,
+              station,
+              stratum,
+              survey_definition_id
+            ) %>%
+            dplyr::distinct()
+        ),
       shp_nbs$survey.grid  %>%
         sf::st_transform(
           crs = crs_out
