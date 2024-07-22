@@ -471,8 +471,6 @@ dat <-
 
 load(file = here::here("data", "shp_all.rdata"))
 
-temp_storage <- shp_all$survey.grid 
-
 var_breaks <- c(-10, seq(from = -2, to = 8, by = 1), 50)
 
 var_labels <- c()
@@ -558,4 +556,7 @@ dat <-
       labels = var_labels,
     )
   ) %>%
-  st_as_sf()
+  st_as_sf() %>%
+  filter(
+    !st_is_empty(.)
+  )
