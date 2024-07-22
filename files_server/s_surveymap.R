@@ -1,41 +1,40 @@
 s_surveymap <- function(id) {
   moduleServer(id, function(input, output, session) {
-   
+    
     ## Define unique operator
     `%!in%` <- Negate(`%in%`)
     
-    ## PREAMBLE TESTING
-    df0 <-
-      reactive({
-        dat %>%
-        dplyr::filter(
-          year == input$year &
-            SRVY %in% input$survey
-        )
-      })
+    # ## PREAMBLE TESTING
+    # df0 <-
+    #   reactive({
+    #     dat %>%
+    #     dplyr::filter(
+    #       year == input$year &
+    #         SRVY %in% input$survey
+    #     )
+    #   })
     
     # Survey regions color palette
     pal_shp <- 
-      colorNumeric(
-        viridis(
+      colorFactor(
+        viridis_pal(
           option = "G", 
-          n      = length(unique(shp_all$survey.area$survey_definition_id)), 
           begin  = 0.2, 
           end    = 0.8
-        ), 
-        domain   = shp_all$survey.area$survey_definition_id,
+        )(length(unique(shp_all$survey.area$SRVY))),  
+        domain   = unique(shp_all$survey.area$SRVY),
         na.color = "transparent"
       )
     
     # Temperature color palette
     pal_tmp <-
-      leaflet::colorNumeric(
-        palette = viridis_pal(
+      leaflet::colorFactor(
+        palette  = viridis_pal(
           begin  = 0.2,
           end    = 0.8,
           option = "B"
-        )(2),
-        domain = c(-2, 12),
+        )(length(unique(dat$bot_bin))),
+        domain = unique(dat$bin_bin),
         na.color = viridis(
           n      = 1,
           begin  = 0.8,
@@ -115,7 +114,7 @@ s_surveymap <- function(id) {
           weight         = 1,
           color          = "#444444",
           opacity        = 1,
-          fillColor      = ~pal_shp(survey_definition_id),
+          fillColor      = ~pal_shp(SRVY),
           fillOpacity    = 0.2,
           smoothFactor   = 0.5,
           label          = ~paste(survey_long),
@@ -127,49 +126,138 @@ s_surveymap <- function(id) {
         addMeasure(
           primaryLengthUnit = "kilometers",
           secondaryAreaUnit = "miles"
-        ) %>%
-        addDrawToolbar(
-          targetGroup ='draw',
-          editOptions = editToolbarOptions(
-            selectedPathOptions = selectedPathOptions()
-          ),
-          polylineOptions = filterNULL(
-            list(
-              shapeOptions = drawShapeOptions(
-                lineJoin = "round",
-                weight   = 3
-              )
-            )
-          ),
-          circleOptions = filterNULL(
-            list(
-              shapeOptions = drawShapeOptions(),
-              repeatMode   = FALSE,
-              showRadius   = TRUE,
-              metric       = TRUE,
-              feet         = FALSE,
-              nautic       = FALSE
-            )
-          )
+        # ) %>%
+        # addDrawToolbar(
+        #   targetGroup ='draw',
+        #   editOptions = editToolbarOptions(
+        #     selectedPathOptions = selectedPathOptions()
+        #   ),
+        #   polylineOptions = filterNULL(
+        #     list(
+        #       shapeOptions = drawShapeOptions(
+        #         lineJoin = "round",
+        #         weight   = 3
+        #       )
+        #     )
+        #   ),
+        #   circleOptions = filterNULL(
+        #     list(
+        #       shapeOptions = drawShapeOptions(),
+        #       repeatMode   = FALSE,
+        #       showRadius   = TRUE,
+        #       metric       = TRUE,
+        #       feet         = FALSE,
+        #       nautic       = FALSE
+        #     )
+        #   )
         )
       
-      if (input$plot_unit == "bottom_temperature_c") {
-        a <- 
-          a %>%
-          addPolygons(
-            data = dat %>%
-              st_transform(crs = "+proj=longlat +datum=WGS84") %>%
-              dplyr::filter(
-                SRVY %in% input$survey &
-                  year == input$year
-              ) %>%
-              dplyr::filter(
-                SRVY %!in% c("AI", "GOA")
-              ),
-            weight = 0.25,
-            # color  = ~pal_tmp(bot_bin)
+      if (input$plot_unit != "none") {
+        dat_temps <- 
+          dat %>%
+          dplyr::filter(
+            SRVY %in% input$survey,
+            SRVY %!in% c("AI", "GOA"),
+            year == input$year
+          ) %>%
+          st_transform(crs = "+proj=longlat +datum=WGS84")
+        
+        dat_temps_grid <- 
+          dat_temps %>%
+          dplyr::filter(
+            is.na(comment)
           )
-      } else {
+        
+        dat_temps_crnr <-
+          dat_temps %>%
+          dplyr::filter(
+            !is.name(comment)
+          )
+        
+        if (input$plot_unit == "bottom_temperature_c") {
+          a <- 
+            a %>%
+            addMapPane(
+              "grid", 
+              zIndex = 410
+            ) %>%
+            addMapPane(
+              "corners",
+              zIndex = 480
+            ) %>%
+            addPolygons(
+              data        = dat_temps_grid,
+              weight      = 1,
+              color       = "black",
+              fillColor   = ~pal_tmp(bot_bin),
+              fillOpacity = 1,
+              popup       = paste(
+                "Survey:",
+                dat_temps_grid$survey_long,
+                "<br>",
+                "Station:",
+                dat_temps_grid$station,
+                "<br>",
+                "Temperature:",
+                dat_temps_grid$bottom_temperature_c,
+                "(°C)"
+              ),
+              options = pathOptions(pane = "grid")
+            ) %>%
+            addPolygons(
+              data        = dat_temps_crnr,
+              weight      = 1,
+              color       = "black",
+              fillColor   = ~pal_tmp(bot_bin),
+              fillOpacity = 1,
+              popup       = paste(
+                "Survey:",
+                dat_temps_crnr$survey_long,
+                "<br>",
+                "Station:",
+                dat_temps_crnr$station,
+                "<br>",
+                "Temperature:",
+                dat_temps_crnr$bottom_temperature_c,
+                "(°C)"
+              ),
+              options = pathOptions(pane = "corners")
+            ) %>%
+            addLegend(
+              position = "bottomleft",
+              pal      = pal_tmp,
+              values   = dat_temps$bot_bin,
+              title    = "Bottom </br> Temperature (°C)"
+            )
+        # } else if (input$plot_unit == "surface_temperature_c") {
+        #   a <- 
+        #     a %>%
+        #     addPolygons(
+        #       data        = dat_temps,
+        #       weight      = 1,
+        #       color       = "black", 
+        #       fillColor   = ~pal_tmp(sur_bin),
+        #       fillOpacity = 1,
+        #       popup       = paste(
+        #         "Survey:",
+        #         dat_temps$survey_long,
+        #         "<br>",
+        #         "Station:",
+        #         dat_temps$station,
+        #         "<br>",
+        #         "Temperature:",
+        #         dat_temps$surface_temperature_c,
+        #         "(°C)"
+        #       )
+        #     ) %>%
+        #     addLegend(
+        #       position = "bottomleft",
+        #       pal      = pal_tmp,
+        #       values   = dat_temps$sur_bin,
+        #       title    = "Surface </br> Temperature (°C)"
+        #     )
+        } 
+      }else {
         a
       }
       
@@ -179,7 +267,7 @@ s_surveymap <- function(id) {
           a %>% 
           addPolygons(
             data = 
-              shp_all$survey.strata %>% 
+              shp_all$survey.strata %>%
               st_transform(crs = "+proj=longlat +datum=WGS84") %>%
               dplyr::filter(
                 SRVY %in% input$survey
