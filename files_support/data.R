@@ -475,14 +475,26 @@ var_breaks <- c(-10, seq(from = -2, to = 8, by = 1), 50)
 
 var_labels <- c()
 for(i in 2:c(length(var_breaks))) {
-  var_labels <- c(var_labels, 
-                  dplyr::case_when(
-                    i==2 ~ paste0("\u2264 ",# "≤ ", #
-                                  var_breaks[i]), # ,"\u00B0C" <=
-                    i==(length(var_breaks)) ~ paste0("> ", var_breaks[i-1]), # , "\u00B0C"
-                    TRUE ~ paste0("> ",
-                                  var_breaks[i-1],"\u2013",var_breaks[i]) # ,"\u00B0C" "\u00B0"
-                  ))
+  var_labels <- 
+    c(
+      var_labels, 
+      dplyr::case_when(
+        i == 2 ~ paste0(
+          "\u2264 ", # "≤ "
+          var_breaks[i]
+        ),
+        i == (length(var_breaks)) ~ paste0(
+          "> ", 
+          var_breaks[i-1]
+        ),
+        TRUE ~ paste0(
+          "> ",
+          var_breaks[i-1],
+          "\u2013",
+          var_breaks[i]
+        )
+      )
+    )
 }
 
 var_color <- 
