@@ -42,6 +42,29 @@ s_surveymap <- function(id) {
           option = "B"
         )
       )
+    # Reactive Expressions -------
+    ## Subset data based on user selection ------
+    dat_temps_grid <- reactive({
+      dat %>%
+      dplyr::filter(
+        SRVY %in% input$survey,
+        SRVY %!in% c("AI", "GOA"),
+        year == input$year,
+        is.na(comment)
+      ) %>%
+      st_transform(crs = "+proj=longlat +datum=WGS84")
+    })
+    
+    dat_temps_crnr <- reactive({
+      dat %>%
+        dplyr::filter(
+          SRVY %in% input$survey,
+          SRVY %!in% c("AI", "GOA"),
+          year == input$year,
+          !is.na(comment)
+        ) %>%
+        st_transform(crs = "+proj=longlat +datum=WGS84")
+    }) 
     
     # Build the map
     output$mymap <- renderLeaflet({
@@ -151,115 +174,191 @@ s_surveymap <- function(id) {
         #     )
         #   )
         )
-      
+
       if (input$plot_unit != "none") {
-        dat_temps <- 
-          dat %>%
-          dplyr::filter(
-            SRVY %in% input$survey,
-            SRVY %!in% c("AI", "GOA"),
-            year == input$year
+        leafletProxy(
+          "mymap"
+        ) %>%
+          addMapPane(
+            "grid",
+            zIndex = 420
           ) %>%
-          st_transform(crs = "+proj=longlat +datum=WGS84")
-        
-        dat_temps_grid <- 
-          dat_temps %>%
-          dplyr::filter(
-            is.na(comment)
-          )
-        
-        dat_temps_crnr <-
-          dat_temps %>%
-          dplyr::filter(
-            !is.name(comment)
-          )
-        
-        if (input$plot_unit == "bottom_temperature_c") {
-          a <- 
-            a %>%
-            addMapPane(
-              "grid", 
-              zIndex = 410
-            ) %>%
-            addMapPane(
-              "corners",
-              zIndex = 480
-            ) %>%
-            addPolygons(
-              data        = dat_temps_grid,
-              weight      = 1,
-              color       = "black",
-              fillColor   = ~pal_tmp(bot_bin),
-              fillOpacity = 1,
-              popup       = paste(
-                "Survey:",
-                dat_temps_grid$survey_long,
-                "<br>",
-                "Station:",
-                dat_temps_grid$station,
-                "<br>",
-                "Temperature:",
-                dat_temps_grid$bottom_temperature_c,
-                "(°C)"
-              ),
-              options = pathOptions(pane = "grid")
-            ) %>%
-            addPolygons(
-              data        = dat_temps_crnr,
-              weight      = 1,
-              color       = "black",
-              fillColor   = ~pal_tmp(bot_bin),
-              fillOpacity = 1,
-              popup       = paste(
-                "Survey:",
-                dat_temps_crnr$survey_long,
-                "<br>",
-                "Station:",
-                dat_temps_crnr$station,
-                "<br>",
-                "Temperature:",
-                dat_temps_crnr$bottom_temperature_c,
-                "(°C)"
-              ),
-              options = pathOptions(pane = "corners")
-            ) %>%
-            addLegend(
-              position = "bottomleft",
-              pal      = pal_tmp,
-              values   = dat_temps$bot_bin,
-              title    = "Bottom </br> Temperature (°C)"
+          addMapPane(
+            "corners",
+            zIndex = 420
+          ) %>%
+          addPolygons(
+            data        = dat_temps_grid(),
+            options     = pathOptions(pane = "grid"),
+            weight      = 1,
+            color       = "black",
+            fillColor   = ~pal_tmp(bot_bin),
+            fillOpacity = 1,
+            popup       = paste(
+              "Survey:",
+              dat_temps_grid()$survey_long,
+              "<br>",
+              "Station:",
+              dat_temps_grid()$station,
+              "<br>",
+              "Temperature:",
+              dat_temps_grid()$bottom_temperature_c,
+              "(°C)"
             )
-        # } else if (input$plot_unit == "surface_temperature_c") {
-        #   a <- 
-        #     a %>%
-        #     addPolygons(
-        #       data        = dat_temps,
-        #       weight      = 1,
-        #       color       = "black", 
-        #       fillColor   = ~pal_tmp(sur_bin),
-        #       fillOpacity = 1,
-        #       popup       = paste(
-        #         "Survey:",
-        #         dat_temps$survey_long,
-        #         "<br>",
-        #         "Station:",
-        #         dat_temps$station,
-        #         "<br>",
-        #         "Temperature:",
-        #         dat_temps$surface_temperature_c,
-        #         "(°C)"
-        #       )
-        #     ) %>%
-        #     addLegend(
-        #       position = "bottomleft",
-        #       pal      = pal_tmp,
-        #       values   = dat_temps$sur_bin,
-        #       title    = "Surface </br> Temperature (°C)"
-        #     )
-        } 
-      }else {
-        a
+          ) %>%
+          addPolygons(
+            data        = dat_temps_crnr(),
+            options     = pathOptions(pane = "corners"),
+            weight      = 1,
+            color       = "black",
+            fillColor   = ~pal_tmp(bot_bin),
+            fillOpacity = 1,
+            popup       = paste(
+              "Survey:",
+              dat_temps_crnr()$survey_long,
+              "<br>",
+              "Station:",
+              dat_temps_crnr()$station,
+              "<br>",
+              "Temperature:",
+              dat_temps_crnr()$bottom_temperature_c,
+              "(°C)"
+            ),
+          ) %>%
+          addLegend(
+            position = "bottomright",
+            pal      = pal_tmp,
+            values   = dat_temps$bot_bin,
+            title    = "Temperature (°C)",
+            opacity  = 1.0
+          )
       }
+          # addPolygons(
+          #   data        = dat_temps_grid,
+          #   options     = pathOptions(pane = "grid"),
+          #   weight      = 1,
+          #   color       = "black",
+          #   fillColor   = ~pal_tmp(bot_bin),
+          #   fillOpacity = 1,
+          #   popup       = paste(
+          #     "Survey:",
+          #     dat_temps_grid$survey_long,
+          #     "<br>",
+          #     "Station:",
+          #     dat_temps_grid$station,
+          #     "<br>",
+          #     "Temperature:",
+          #     dat_temps_grid$bottom_temperature_c,
+          #     "(°C)"
+          #   ),
+          # ) %>%
+          # addPolygons(
+          #   data        = dat_temps_crnr,
+          #   options     = pathOptions(pane = "corners"),
+          #   weight      = 1,
+          #   color       = "black",
+          #   fillColor   = ~pal_tmp(bot_bin),
+          #   fillOpacity = 1,
+          #   popup       = paste(
+          #     "Survey:",
+          #     dat_temps_crnr$survey_long,
+          #     "<br>",
+          #     "Station:",
+          #     dat_temps_crnr$station,
+          #     "<br>",
+          #     "Temperature:",
+          #     dat_temps_crnr$bottom_temperature_c,
+          #     "(°C)"
+          #   ),
+          # )
+        
+      #   if (input$plot_unit == "bottom_temperature_c") {
+      #     a <- 
+      #       a %>%
+      #       addMapPane(
+      #         "grid", 
+      #         zIndex = 420
+      #       ) %>%
+      #       addMapPane(
+      #         "corners",
+      #         zIndex = 440
+      #       ) %>%
+      #       addPolygons(
+      #         data        = dat_temps_grid,
+      #         options     = pathOptions(pane = "grid"),
+      #         weight      = 1,
+      #         color       = "black",
+      #         fillColor   = ~pal_tmp(bot_bin),
+      #         fillOpacity = 1,
+      #         popup       = paste(
+      #           "Survey:",
+      #           dat_temps_grid$survey_long,
+      #           "<br>",
+      #           "Station:",
+      #           dat_temps_grid$station,
+      #           "<br>",
+      #           "Temperature:",
+      #           dat_temps_grid$bottom_temperature_c,
+      #           "(°C)"
+      #         ),
+      #       ) %>%
+      #       addPolygons(
+      #         data        = dat_temps_crnr,
+      #         options     = pathOptions(pane = "corners"),
+      #         weight      = 1,
+      #         color       = "black",
+      #         fillColor   = ~pal_tmp(bot_bin),
+      #         fillOpacity = 1,
+      #         popup       = paste(
+      #           "Survey:",
+      #           dat_temps_crnr$survey_long,
+      #           "<br>",
+      #           "Station:",
+      #           dat_temps_crnr$station,
+      #           "<br>",
+      #           "Temperature:",
+      #           dat_temps_crnr$bottom_temperature_c,
+      #           "(°C)"
+      #         ),
+      #       ) %>%
+      #       addLegend(
+      #         position = "bottomright",
+      #         pal      = pal_tmp,
+      #         values   = dat_temps$bot_bin,
+      #         title    = "Bottom </br> Temperature (°C)",
+      #         opacity  = 1.0
+      #       )
+      #   # } else if (input$plot_unit == "surface_temperature_c") {
+      #   #   a <- 
+      #   #     a %>%
+      #   #     addPolygons(
+      #   #       data        = dat_temps,
+      #   #       weight      = 1,
+      #   #       color       = "black", 
+      #   #       fillColor   = ~pal_tmp(sur_bin),
+      #   #       fillOpacity = 1,
+      #   #       popup       = paste(
+      #   #         "Survey:",
+      #   #         dat_temps$survey_long,
+      #   #         "<br>",
+      #   #         "Station:",
+      #   #         dat_temps$station,
+      #   #         "<br>",
+      #   #         "Temperature:",
+      #   #         dat_temps$surface_temperature_c,
+      #   #         "(°C)"
+      #   #       )
+      #   #     ) %>%
+      #   #     addLegend(
+      #   #       position = "bottomleft",
+      #   #       pal      = pal_tmp,
+      #   #       values   = dat_temps$sur_bin,
+      #   #       title    = "Surface </br> Temperature (°C)"
+      #   #     )
+      #   } 
+      # }else {
+      #   a
+      # }
       
       ## ADD STRATUM POLYGONS -----------------
       if (input$stratum) {
