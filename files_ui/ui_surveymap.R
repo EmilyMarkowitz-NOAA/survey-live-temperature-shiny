@@ -20,7 +20,6 @@ ui_surveymap <- function(id) {
           label    = "Year",
           choices  = sort(unique(dat$year)),
           selected = max(dat$year),
-          # selected = 2023, # FOR TESTING
           multiple = FALSE
         ),
         checkboxGroupInput(
@@ -56,6 +55,15 @@ ui_surveymap <- function(id) {
             "None" = "none"
           ),
           selected = "none",
+        ),
+        selectInput(
+          inputId = ns("plot_color"),
+          label   = "Color scheme",
+          choices = c(
+            "Magma"   = "A",
+            "Viridis" = "D"
+          ),
+          selected = "A"
         ),
         p("Additional toggles"),
         checkboxInput(

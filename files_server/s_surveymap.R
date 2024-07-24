@@ -1,23 +1,15 @@
 s_surveymap <- function(id) {
   moduleServer(id, function(input, output, session) {
     
-    ## Define unique operator
+    # Static values ----
+    ## Define unique operator -----
     `%!in%` <- Negate(`%in%`)
     
-    # ## PREAMBLE TESTING
-    # df0 <-
-    #   reactive({
-    #     dat %>%
-    #     dplyr::filter(
-    #       year == input$year &
-    #         SRVY %in% input$survey
-    #     )
-    #   })
-    
-    # Survey regions color palette
+    ## Survey regions color palette ----
     pal_shp <- 
       colorFactor(
         viridis_pal(
+          # mako
           option = "G", 
           begin  = 0.2, 
           end    = 0.8
@@ -26,23 +18,26 @@ s_surveymap <- function(id) {
         na.color = "transparent"
       )
     
-    # Temperature color palette
-    pal_tmp <-
+    # Reactive Expressions -------
+    ##
+    ## Temperature color palette ------
+    pal_tmp <- reactive({
       leaflet::colorFactor(
         palette  = viridis_pal(
           begin  = 0.2,
           end    = 0.8,
-          option = "B"
+          option = input$plot_color
         )(length(unique(dat$bot_bin))),
-        domain = unique(dat$bin_bin),
+        domain = unique(dat$bot_bin),
         na.color = viridis(
           n      = 1,
           begin  = 0.8,
           end    = 0.8,
-          option = "B"
+          option = input$plot_color
         )
       )
-    # Reactive Expressions -------
+    })
+    
     ## Subset data based on user selection ------
     dat_temps_grid <- reactive({
       dat %>%
@@ -92,6 +87,10 @@ s_surveymap <- function(id) {
         ) %>%
         # Land mass polygons (i.e., Alaska)
         addPolygons(
+          # # AKFG shape files
+          # data = 
+          #   shp_all$akland %>%
+          #   st_transform(crs = "+proj=longlat +datum=WGS84"),
           data = rnaturalearth::ne_countries(
             country     = c("United States of America", "Canada", "Russia"),
             scale       = "medium",
@@ -106,27 +105,6 @@ s_surveymap <- function(id) {
           label        = ~paste(name),
           labelOptions = labelOptions(direction = "auto")
         ) %>%
-        # # Add map graticules
-        # addPolylines(
-        #   data = shp_all$graticule %>%
-        #     st_transform(crs = "+proj=longlat +datum=WGS84"),
-        #   weight = 1,
-        #   color  = "#000000",
-        #   label  = ~paste(degree),
-        #   labelOptions = labelOptions(direction = "auto")
-        # ) %>%
-        # # Add bathymetric countours
-        # addPolylines(
-        #   data = shp_all$bathymetry %>%
-        #     st_transform(crs = "+proj=longlat +datum=WGS84") %>%
-        #     dplyr::filter(
-        #       SRVY %in% input$survey
-        #     ),
-        #   weight = 2, 
-        #   color  = "#000000",
-        #   label  = ~paste(meters),
-        #   labelOptions = labelOptions(direction = "auto")
-        # ) %>%
         # Survey region polygons
         addPolygons(
           data = shp_all$survey.area %>%
@@ -149,6 +127,27 @@ s_surveymap <- function(id) {
         addMeasure(
           primaryLengthUnit = "kilometers",
           secondaryAreaUnit = "miles"
+        # ) %>%
+        # # Add map graticules
+        # addPolylines(
+        #   data = shp_all$graticule %>%
+        #     st_transform(crs = "+proj=longlat +datum=WGS84"),
+        #   weight = 1,
+        #   color  = "#000000",
+        #   label  = ~paste(degree),
+        #   labelOptions = labelOptions(direction = "auto")
+        # ) %>%
+        # # Add bathymetric countours
+        # addPolylines(
+        #   data = shp_all$bathymetry %>%
+        #     st_transform(crs = "+proj=longlat +datum=WGS84") %>%
+        #     dplyr::filter(
+        #       SRVY %in% input$survey
+        #     ),
+        #   weight = 2, 
+        #   color  = "#000000",
+        #   label  = ~paste(meters),
+        #   labelOptions = labelOptions(direction = "auto")
         # ) %>%
         # addDrawToolbar(
         #   targetGroup ='draw',
@@ -192,7 +191,7 @@ s_surveymap <- function(id) {
             options     = pathOptions(pane = "grid"),
             weight      = 1,
             color       = "black",
-            fillColor   = ~pal_tmp(bot_bin),
+            fillColor   = ~pal_tmp()(dat_temps_grid()$bot_bin),
             fillOpacity = 1,
             popup       = paste(
               "Survey:",
@@ -211,7 +210,7 @@ s_surveymap <- function(id) {
             options     = pathOptions(pane = "corners"),
             weight      = 1,
             color       = "black",
-            fillColor   = ~pal_tmp(bot_bin),
+            fillColor   = ~pal_tmp()(dat_temps_grid()$bot_bin),
             fillOpacity = 1,
             popup       = paste(
               "Survey:",
@@ -227,8 +226,8 @@ s_surveymap <- function(id) {
           ) %>%
           addLegend(
             position = "bottomright",
-            pal      = pal_tmp,
-            values   = dat_temps$bot_bin,
+            pal      = pal_tmp(),
+            values   = dat_temps_grid()$bot_bin,
             title    = "Temperature (°C)",
             opacity  = 1.0
           )
