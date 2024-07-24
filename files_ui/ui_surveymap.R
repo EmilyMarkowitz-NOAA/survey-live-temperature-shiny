@@ -50,8 +50,8 @@ ui_surveymap <- function(id) {
           inputId = ns("plot_unit"),
           label   = "Environmental variable",
           choices = c(
-            "Bottom Temperature (°C)"  = "bottom_temperature_c",
-            "Surface Temperature (°C)" = "surface_temperature_c",
+            "Bottom Temperature (°C)"  = "bottom",
+            "Surface Temperature (°C)" = "surface",
             "None" = "none"
           ),
           selected = "none",
