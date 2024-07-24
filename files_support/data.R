@@ -65,6 +65,17 @@ if (doihaveinternet) {
       -links
     )
 
+  pal <- colorFactor(
+    viridis(
+      option   = "D", 
+      n        = length(unique(dat_haul_api$vessel_name)), 
+      begin    = .2, 
+      end      = .8), 
+    ordered  = FALSE,
+    domain   = levels(unique(dat_haul_api$vessel_name)),
+    na.color = "black"
+  )
+  
 ## Parse FOSS data -------------------------------------------------------------  
 ### dat_survey_list ------------------------------------------------------------
   dat_survey_list <- 
@@ -78,7 +89,7 @@ if (doihaveinternet) {
     dplyr::distinct() %>% 
     dplyr::ungroup()
 
-### dat_surveys ----------------------------------------------------------------  
+### dat_surveys ----------------------------------------------------------------
   dat_surveys <- 
     dat_haul_api %>% 
     dplyr::select(
@@ -536,39 +547,39 @@ dat <-
     ),
     relationship = "many-to-many"
   ) %>%
-  mutate(
-    bot_bin = base::cut(
-      x = as.numeric(bottom_temperature_c), 
-      breaks = var_breaks, 
-      labels = FALSE,
-      include.lowest = TRUE,
-      right = FALSE
-    ),
-    .after = bottom_temperature_c
+  st_as_sf() %>%
+  filter(
+    !st_is_empty(.)
+  ) %>%
+  pivot_longer(
+    cols          = c(bottom_temperature_c, surface_temperature_c),
+    names_to      = c("type", ".value"),
+    names_pattern = "([a-zA-Z]+)(.*)"
+  ) %>%
+  dplyr::rename(
+    temperature_type = "type",
+    temperature_c    = '_temperature_c',
   ) %>%
   mutate(
-    sur_bin = base::cut(
-      x = as.numeric(surface_temperature_c), 
-      breaks = var_breaks, 
-      labels = FALSE,
+    temperature_bin = base::cut(
+      x = as.numeric(temperature_c),
+      breaks         = var_breaks,
+      labels         = FALSE,
       include.lowest = TRUE,
-      right = FALSE
+      right          = FALSE,
     ),
-    .after = surface_temperature_c
+    .after = temperature_c
   ) %>%
   mutate(
-    bot_bin = base::factor(
-      x = var_labels[bot_bin],
-      levels = var_labels,
-      labels = var_labels,
-    ),
-    sur_bin = base::factor(
-      x = var_labels[sur_bin],
+    temperature_bin = base::factor(
+      x      = var_labels[temperature_bin],
       levels = var_labels,
       labels = var_labels,
     )
   ) %>%
-  st_as_sf() %>%
-  filter(
-    !st_is_empty(.)
+  dplyr::relocate(
+    temperature_type,
+    temperature_c,
+    temperature_bin,
+    .after = vessel_shape
   )
