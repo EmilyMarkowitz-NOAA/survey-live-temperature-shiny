@@ -24,7 +24,7 @@ ui_surveymap <- function(id) {
         ),
         checkboxGroupInput(
           inputId  = ns("survey"),
-          label    = "Survey",
+          label    = "Survey region",
           choiceNames = sort(
             unique(
               shp_all$survey.area$survey_long
@@ -37,15 +37,15 @@ ui_surveymap <- function(id) {
           ),
           selected = c("EBS", "NBS")
         ),
-        selectInput(
-          inputId = ns("plot_display"),
-          label   = "Display",
-          choices = c(
-            "Points"   = "pt",
-            "Coldpool" = "coldpool"
-          ),
-          selected = "pt"
-        ),
+        # selectInput(
+        #   inputId = ns("plot_display"),
+        #   label   = "Display",
+        #   choices = c(
+        #     "Points"   = "pt",
+        #     "Coldpool" = "coldpool"
+        #   ),
+        #   selected = "pt"
+        # ),
         selectInput(
           inputId = ns("plot_unit"),
           label   = "Environmental variable",
@@ -61,7 +61,13 @@ ui_surveymap <- function(id) {
           label   = "Color scheme",
           choices = c(
             "Magma"   = "A",
-            "Viridis" = "D"
+            "Inferno" = "B",
+            "Plasma"  = "C",
+            "Viridis" = "D",
+            "Cividis" = "E",
+            "Rocket"  = "F",
+            "Mako"    = "G",
+            "Turbo"   = "H"
           ),
           selected = "A"
         ),
@@ -76,11 +82,11 @@ ui_surveymap <- function(id) {
           label   = "Stratum",
           value   = FALSE
         ),
-        checkboxInput(
-          inputId = ns("vessel"),
-          label   = "Vessels",
-          value   = FALSE
-        ),
+        # checkboxInput(
+        #   inputId = ns("vessel"),
+        #   label   = "Vessels",
+        #   value   = FALSE
+        # ),
         actionButton(
           inputId = ns("updateButton"),
           label   = "Update map"
