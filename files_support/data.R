@@ -482,7 +482,7 @@ dat <-
 
 load(file = here::here("data", "shp_all.rdata"))
 
-var_breaks <- c(-10, seq(from = -2, to = 8, by = 1), 50)
+var_breaks <- format(c(-10, seq(from = -2, to = 10, by = 0.5), 50), nsmall = 1)
 
 var_labels <- c()
 for(i in 2:c(length(var_breaks))) {
@@ -490,16 +490,19 @@ for(i in 2:c(length(var_breaks))) {
     c(
       var_labels, 
       dplyr::case_when(
-        i == 2 ~ paste0(
-          "\u2264 ", # "≤ "
+        # Minimum value
+        i == 2 ~ paste(
+          "\u2264", # "≤ "
           var_breaks[i]
         ),
-        i == (length(var_breaks)) ~ paste0(
-          "> ", 
+        # Maximum value
+        i == (length(var_breaks)) ~ paste(
+          ">", 
           var_breaks[i-1]
         ),
-        TRUE ~ paste0(
-          "> ",
+        # Intermediate values
+        TRUE ~ paste(
+          ">",
           var_breaks[i-1],
           "\u2013",
           var_breaks[i]
@@ -515,9 +518,11 @@ var_color <-
     option = "B"
   )(length(var_labels))
 
-# Parse apart station and corner polygons. This allows corner stations to be
-# overlayed in those years when corner station data are available, else the full
-# survey grid is displayed
+# Parse station and corner polygons. This allows the full survey grid to be
+# rendered without any gaps for the corner stations. Those corner stations are
+# then overlayed on top of the survey grid layer in years where corner station
+# data are avaiable.corner stations to be
+
 shp_all$survey.grid <- 
   bind_rows(
     shp_all$survey.grid %>%
