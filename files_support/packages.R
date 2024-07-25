@@ -111,12 +111,14 @@ PKG <- c(
 
 )
 
-for (p in PKG) {
-  if(!require(p,character.only = TRUE)) {  
-    if (p %in% c("akgfmaps", "coldpool", "gapindex")) {
-      devtools::install_github("afsc-gap-products/akgfmaps")
-    } else {
-      install.packages(p, verbose = FALSE)
-    }
-    require(p,character.only = TRUE)}
-}
+lapply(PKG, library, character.only = TRUE)
+
+# for (p in PKG) {
+#   if(!require(p,character.only = TRUE)) {  
+#     if (p %in% c("akgfmaps", "coldpool", "gapindex")) {
+#       devtools::install_github("afsc-gap-products/akgfmaps")
+#     } else {
+#       install.packages(p, verbose = FALSE)
+#     }
+#     require(p,character.only = TRUE)}
+# }
