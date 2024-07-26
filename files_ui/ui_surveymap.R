@@ -2,13 +2,22 @@ ui_surveymap <- function(id) {
   ns <- NS(id)
   
   fluidPage(
-    column(
+    tabBox(
+      title = "Survey",
       width = 10,
-      leafletOutput(
-        ns("mymap"),
-        # 'vh' dynamically adjusts height of map to indicated % of window size
-        height = '91vh',
-        # width = '90vw'
+      tabPanel(
+        "Map",
+  
+          leafletOutput(
+            ns("mymap"),
+            # 'vh' dynamically adjusts height of map to indicated % of window size
+            height = '85vh',
+            # width = '90vw'
+          )
+      ),
+      tabPanel(
+        "Data",
+        DT::dataTableOutput(ns("DataTable"))
       )
     ),
     
@@ -82,6 +91,11 @@ ui_surveymap <- function(id) {
           label   = "Stratum",
           value   = FALSE
         ),
+        checkboxInput(
+          inputId = ns("bathymetry"),
+          label   = "Bathymetric contours",
+          value   = FALSE
+        ),
         # checkboxInput(
         #   inputId = ns("vessel"),
         #   label   = "Vessels",
@@ -89,7 +103,7 @@ ui_surveymap <- function(id) {
         # ),
         actionButton(
           inputId = ns("updateButton"),
-          label   = "Update map"
+          label   = "Update"
         )
       )
     )

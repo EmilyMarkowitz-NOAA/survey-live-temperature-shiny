@@ -136,17 +136,6 @@ s_surveymap <- function(id) {
         #   label  = ~paste(degree),
         #   labelOptions = labelOptions(direction = "auto")
         # ) %>%
-        # ## Add bathymetric countours ------
-        # addPolylines(
-        #   data = shp_all$bathymetry %>%
-        #     st_transform(crs = "+proj=longlat +datum=WGS84") %>%
-        #     dplyr::filter(
-        #       SRVY %in% input$survey
-        #     ),
-        #   weight = 2, 
-        #   color  = "#000000",
-        #   label  = ~paste(meters),
-        #   labelOptions = labelOptions(direction = "auto")
         ) %>%
         ## Add drawing tools for measurements -----
         addDrawToolbar(
@@ -274,6 +263,7 @@ s_surveymap <- function(id) {
             "(°C)"
             )
           ) %>%
+          ## Temperature Legend -----
           addLegend(
             position = "bottomright",
             layerId  = "temps_legend",
@@ -297,6 +287,41 @@ s_surveymap <- function(id) {
           )
       }
     
+      
+      ## Add bathymetric countours ------
+      if (input$bathymetry) {
+        leafletProxy(
+          "mymap"
+        ) %>%
+          clearGroup(
+            "survey_bathymetry"
+          ) %>%
+          addMapPane(
+            "bathymetry",
+            zIndex = 470
+          ) %>%
+        addPolylines(
+        data = shp_all$bathymetry %>%
+          st_transform(crs = "+proj=longlat +datum=WGS84") %>%
+          dplyr::filter(
+            SRVY %in% input$survey
+          ),
+        group        = "survey_bathymetry",
+        options      = pathOptions(pane = "bathymetry"),
+        weight       = 1.5,
+        color        = "#000000",
+        label        = ~paste(meters, "(m)"),
+        labelOptions = labelOptions(direction = "auto")
+        )
+      } else if (input$bathymetry == FALSE) {
+        leafletProxy(
+          "mymap"
+        ) %>%
+          clearGroup(
+            "survey_bathymetry"
+          )
+      }
+      
       ## Survey Strata -----
       if (input$stratum) {
         leafletProxy(
@@ -388,6 +413,63 @@ s_surveymap <- function(id) {
             "survey_stations"
           )
       }
+    
+    output$DataTable <- 
+      DT::renderDataTable(
+        datatable(
+          dplyr::bind_rows(
+            dat_temps_grid(),
+            dat_temps_crnr()
+          ) %>%
+            dplyr::mutate(
+              Date = as.IDate(date),
+              "Time (z)" = as.ITime(date),
+              .after = station
+            ) %>%
+            dplyr::select(
+              -c(
+                stratum,
+                data_type,
+                date,
+                survey_definition_id,
+                SRVY,
+                survey,
+                vessel_id,
+                vessel_color,
+                vessel_ital, 
+                vessel_shape,
+                temperature_type,
+                temperature_bin,
+                comment
+              )
+            ) %>%
+            dplyr::rename(
+              Year = year,
+              Station = station,
+              Survey = survey_long,
+              Dates = survey_dates,
+              Vessel = vessel_name,
+              "Temperature (°C)" = temperature_c,
+              "Depth (m)" = depth_m,
+              "Starting Lat (dd)" = latitude_dd_start,
+              "Starting Long (dd)" = longitude_dd_start
+            ) %>%
+            st_drop_geometry(),
+          options = list(
+            pageLength = 50, 
+            dom        = 'tip', 
+            dom        = 't',
+            ordering   = FALSE, 
+            paging     = FALSE
+          ),
+          class = "cell-border stripe",
+          rownames = FALSE,
+          # caption = 'Table 2: Defined terms used in web tool.', 
+          escape   = FALSE
+        ) %>%
+          formatRound(c("Starting Lat (dd)", "Starting Long (dd)"), 3)
+      )
+    
     })
   })
 }
