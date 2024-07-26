@@ -3,7 +3,7 @@ ui_surveymap <- function(id) {
   
   fluidPage(
     tabBox(
-      title = "Survey",
+      title = "Alaska Bottom Trawl Survey",
       width = 10,
       tabPanel(
         "Map",

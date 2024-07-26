@@ -18,44 +18,6 @@ s_surveymap <- function(id) {
         na.color = "transparent"
       )
     
-    # Reactive Expressions -----
-    ## Temperature color palette -----
-    pal_tmp <- reactive({
-      leaflet::colorFactor(
-        palette  = viridis_pal(
-          begin  = 0.2,
-          end    = 0.8,
-          option = input$plot_color
-        )(length(unique(filter(dat, temperature_type == input$plot_unit)$temperature_bin))),
-        domain = unique(filter(dat, temperature_type == input$plot_unit)$temperature_bin),
-        na.color   = "transparent"
-      )
-    })
-    
-    ## Subset data based on user selection -----
-    dat_temps_grid <- reactive({
-      dat %>%
-      dplyr::filter(
-        SRVY %in% input$survey,
-        year == input$year,
-        temperature_type == input$plot_unit,
-        grepl("-", station),
-        is.na(comment)
-      ) %>%
-      st_transform(crs = "+proj=longlat +datum=WGS84")
-    })
-    
-    dat_temps_crnr <- reactive({
-      dat %>%
-        dplyr::filter(
-          SRVY %in% input$survey,
-          year == input$year,
-          temperature_type == input$plot_unit,
-          !grepl("-", station),
-          !is.na(comment)
-        ) %>%
-        st_transform(crs = "+proj=longlat +datum=WGS84")
-    }) 
     
     # Build the base map -----
     output$mymap <- renderLeaflet({
@@ -127,7 +89,7 @@ s_surveymap <- function(id) {
           primaryLengthUnit = "kilometers",
           secondaryAreaUnit = "miles"
         # ) %>%
-        # ## Add map graticules -----
+        ## Add map graticules -----
         # addPolylines(
         #   data = shp_all$graticule %>%
         #     st_transform(crs = "+proj=longlat +datum=WGS84"),
@@ -163,10 +125,49 @@ s_surveymap <- function(id) {
           )
         )
     })
-      
+    
+    # Reactive Expressions -----
+    ## Temperature color palette -----
+    pal_tmp <- reactive({
+      leaflet::colorFactor(
+        palette  = viridis_pal(
+          begin  = 0.2,
+          end    = 0.8,
+          option = input$plot_color
+        )(length(unique(filter(dat, temperature_type == input$plot_unit)$temperature_bin))),
+        domain = unique(filter(dat, temperature_type == input$plot_unit)$temperature_bin),
+        na.color   = "transparent"
+      )
+    })
+    
+    ## Subset data based on user selection -----
+    dat_temps_grid <- reactive({
+      dat %>%
+        dplyr::filter(
+          SRVY %in% input$survey,
+          year == input$year,
+          temperature_type == input$plot_unit,
+          grepl("-", station),
+          is.na(comment)
+        ) %>%
+        st_transform(crs = "+proj=longlat +datum=WGS84")
+    })
+    
+    dat_temps_crnr <- reactive({
+      dat %>%
+        dplyr::filter(
+          SRVY %in% input$survey,
+          year == input$year,
+          temperature_type == input$plot_unit,
+          !grepl("-", station),
+          !is.na(comment)
+        ) %>%
+        st_transform(crs = "+proj=longlat +datum=WGS84")
+    }) 
+    
     # Add Map features ----
     observeEvent(input$updateButton, {
-      # Survey region polygons
+      ## Survey region polygons ----
       leafletProxy(
         "mymap"
         ) %>%
@@ -263,7 +264,7 @@ s_surveymap <- function(id) {
             "(°C)"
             )
           ) %>%
-          ## Temperature Legend -----
+          # Temperature Legend -----
           addLegend(
             position = "bottomright",
             layerId  = "temps_legend",
