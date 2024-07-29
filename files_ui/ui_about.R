@@ -2,26 +2,28 @@ ui_about <- function() {
   tabItem(
     tabName = "about",
     fluidRow(
-      HTML("<html lang='en'>"), #Always have this as your first line
-      
-      h1("Surveys Conducted in Alaska by AFSC"), 
-      p("For general exploration... for more specific needs or collaboration, please contact..."),
-      br(),
-      h2("Northern and Eastern Bering Sea"), 
-      br(), 
-      p("Each year since 1982 the RACE Groundfsh Assessment Program has conducted a trawl survey in the eastern Bering Sea at which time water column temperature data was collected. To better utilize this data in biological comparisons, statistics were calculated from each water column sample. The following links contain all the information:"), 
-      img(src="survey_ebs.jpg", width = '35%'),
-      
-      br(), 
-      
-      h2("Gulf of Alaska"), 
-      
-      br(), 
-      
-      h2("AI")
+      box(
+        width        = 12, 
+        id           = "About", 
+        title        = NULL,
+        headerBorder = FALSE,
+        
+        HTML("<html lang='en'>"), #Always have this as your first line
+        
+        h1("Alaska Fisheries Science Center"),
+        h2("Resource Assessment and Conservation Engineering Division"),
+        h3("Groundfish Assessment Program Bottom Trawl Survey"),
+        
+        p("The RACE Groufish Assessment Program conducts bottom trawl surveys with the intent to collect data on the distribution and abundance of crab, groundfish, and other bottom-dwelling species in the Bering Sea, Aleutian Islands, and Gulf of Alaska. This work has been conducted annually since 1982 in the Eastern Bering sea. Bottom Trawl Surveys began more recently in other regions, and occur intermittently (i.e., Northern Bering Sea), or alternate biannually (i.e., Aleutian Islands and Gulf of Alaska)."), 
 
-          )
-      )
+        br(),
+
+        p("This applications serves as a general-purpose tool to explore and visualize those data. For more specific needs or collaboration, please contact <First.Last@noaa.gov>")
+      ),
+      # target the box header of About
+      tags$head(tags$style('#About .box-header{ display: none}'))  
+    )
+  )
 }
 
 
