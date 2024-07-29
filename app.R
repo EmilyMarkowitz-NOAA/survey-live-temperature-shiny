@@ -2,23 +2,23 @@
 ## Support scripts -------------------------------------------------------------
 source(here::here("files_support", "style.R")) 
 source(here::here("files_support", "packages.R"))
-# source(here::here("files_support", "functions.R"))
-# source(here::here("files_support", "data_dl.R"))
 source(here::here("files_support", "data.R"))
+# source(here::here("files_support", "data_dl.R"))
+# source(here::here("files_support", "functions.R"))
 
 ## UI scripts parsed by feature ------------------------------------------------
-source(here::here("files_ui", "ui_surveymap.R"))
-source(here::here("files_ui", "ui_metadata.R"))
-source(here::here("files_ui", "ui_glossary.R"))
-source(here::here("files_ui", "ui_data.R"))
 source(here::here("files_ui", "ui_about.R"))
-# source(here::here("files_ui", "ui_plots.R"))
+source(here::here("files_ui", "ui_climatology.R"))
+source(here::here("files_ui", "ui_glossary.R"))
 source(here::here("files_ui", "ui_licensing.R"))
-source(here::here("files_ui", "ui_manual.R"))
+source(here::here("files_ui", "ui_surveymap.R"))
+# source(here::here("files_ui", "ui_manual.R"))
+# source(here::here("files_ui", "ui_metadata.R"))
 
 ## Server script parsed by feature ---------------------------------------------
-source(here::here("files_server", "s_surveymap.R"))
+source(here::here("files_server", "s_climatology.R"))
 source(here::here("files_server", "s_glossary.R"))
+source(here::here("files_server", "s_surveymap.R"))
 # source(here::here("files_server", "s_data.R"))
 
 # User Interface ---------------------------------------------------------------
@@ -112,34 +112,39 @@ sidebar =
       # Bottom trawl survey progress map(s)
       id = "sidebarMenu",
       menuItem(
-        "Survey Map", 
+        "Survey map", 
         tabName = "surveymap", 
-        icon    = icon("file-image")
+        icon    = icon("globe")
       ),
-      # Metadata
       menuItem(
-        "Metadata",
-        tabName = "metadata",
-        icon    = icon("cogs")
+        "Long-term temperature",
+        tabName = "climatology",
+        icon    = icon("temperature-half")
       ),
-      # Access to the QAQC data
-      menuItem(
-        "Download Data",
-        tabName = "data",
-        icon    = icon("road")
-      ),
-      # Import Data
-      menuItem(
-        "Import Data",
-        tabName = "import",
-        icon    = icon("cloud-upload")
-      ),
-      # Evaluation Metrics
-      menuItem(
-        "Calculator",
-        tabName = "calculator",
-        icon    = icon("cogs")
-      ),
+      # # Metadata
+      # menuItem(
+      #   "Metadata",
+      #   tabName = "metadata",
+      #   icon    = icon("cogs")
+      # ),
+      # # Access to the QAQC data
+      # menuItem(
+      #   "Download Data",
+      #   tabName = "data",
+      #   icon    = icon("road")
+      # ),
+      # # Import Data
+      # menuItem(
+      #   "Import Data",
+      #   tabName = "import",
+      #   icon    = icon("cloud-upload")
+      # ),
+      # # Evaluation Metrics
+      # menuItem(
+      #   "Calculator",
+      #   tabName = "calculator",
+      #   icon    = icon("cogs")
+      # ),
       # Information
       menuItem(
         "Information", 
@@ -159,10 +164,10 @@ sidebar =
         menuSubItem(
           "Glossary of Terms",
           tabName = "glossary",
-        ),
-        menuSubItem(
-          "Literature Cited",
-          tabName = "",
+        # ),
+        # menuSubItem(
+        #   "Literature Cited",
+        #   tabName = "",
         )
       )
     )
@@ -176,6 +181,10 @@ body <-
       tabItem(
         tabName = "surveymap", 
         ui_surveymap("id_surveymap")           
+      ),
+      tabItem(
+        tabName = "climatology",
+        ui_climatology("id_climatology")
       ),
       # # Metadata
       # tabItem(
