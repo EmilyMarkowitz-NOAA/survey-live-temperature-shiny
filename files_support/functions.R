@@ -1,14 +1,14 @@
 # Knowns -----------------------------------------------------------------------
 
-link_foss <- "https://www.fisheries.noaa.gov/foss"
-link_repo <- "https://github.com/afsc-gap-products/gap_products" # paste0(shell("git config --get remote.origin.url"))
-link_repo_web <- "https://afsc-gap-products.github.io/gap_products/"
+link_foss       <- "https://www.fisheries.noaa.gov/foss"
+link_repo       <- "https://github.com/afsc-gap-products/gap_products" # paste0(shell("git config --get remote.origin.url"))
+link_repo_web   <- "https://afsc-gap-products.github.io/gap_products/"
 link_code_books <- "https://www.fisheries.noaa.gov/resource/document/groundfish-survey-species-code-manual-and-data-codes-manual"
-pretty_date <- format(Sys.Date(), "%B %d, %Y")
-licence0 <- "Software code created by U.S. Government employees is not subject to copyright in the United States (17 U.S.C. §105). The United States/Department of Commerce reserve all rights to seek and obtain copyright protection in countries other than the United States for Software authored in its entirety by the Department of Commerce. To this end, the Department of Commerce hereby grants to Recipient a royalty-free, nonexclusive license to use, copy, and create derivative works of the Software outside of the United States."
-NOAA.Fonts <- "Proxima Nova"
+pretty_date     <- format(Sys.Date(), "%B %d, %Y")
+licence0        <- "Software code created by U.S. Government employees is not subject to copyright in the United States (17 U.S.C. §105). The United States/Department of Commerce reserve all rights to seek and obtain copyright protection in countries other than the United States for Software authored in its entirety by the Department of Commerce. To this end, the Department of Commerce hereby grants to Recipient a royalty-free, nonexclusive license to use, copy, and create derivative works of the Software outside of the United States."
+NOAA.Fonts      <- "Proxima Nova"
 
-# Color pallet -----------------------------------------------------------------
+# Color palette ----------------------------------------------------------------
 
 NOAAFisheries.Colors <- 
   list(
@@ -49,67 +49,66 @@ NOAAFisheries.Colors <-
       "Gray 70%" = "#646464"
     ),
   
-  "NOAA Colors" = list(
-  #Primary Colors
-    "REFLEX BLUE"     = "#0A4595", 
-    "PROCESS BLUE"    = "#0099D8", 
-    "DARK SLATE GREY" = "#333333", 
-    "WHITE"           = "#FFFFFF", 
-  #Secondary Colors
-    "DARK GREY"       = "#575757", 
-    "MEDIUM GREY"     = "#666666",
-    "LIGHT GREY"      = "#ACACAC",
-    "FADED BLUE"      = "#6B84B4",
-    "RICH BLUE GREY"  = "#28282A"
+    "NOAA Colors" = list(
+    #Primary Colors
+      "REFLEX BLUE"     = "#0A4595", 
+      "PROCESS BLUE"    = "#0099D8", 
+      "DARK SLATE GREY" = "#333333", 
+      "WHITE"           = "#FFFFFF", 
+    #Secondary Colors
+      "DARK GREY"       = "#575757", 
+      "MEDIUM GREY"     = "#666666",
+      "LIGHT GREY"      = "#ACACAC",
+      "FADED BLUE"      = "#6B84B4",
+      "RICH BLUE GREY"  = "#28282A"
+    )
   )
-
-)
 
 # Functions --------------------------------------------------------------------
 
-# https://stackoverflow.com/questions/37446283/creating-legend-with-circles-leaflet-r
-addLegendCustom <- 
-  function(
-    map, 
-    position = "bottomright", 
-    title = "", 
-    colors, 
-    labels, 
-    sizes, 
-    opacity = 0.5
-  ){
-    colorAdditions <- 
-      paste0(
-        colors, 
-        "; width:", 
-        sizes, 
-        "px; height:", 
-        sizes, 
-        "px"
-      )
-    
-    labelAdditions <- 
-      paste0(
-        "<div style='display: inline-block;height: ", 
-        sizes, 
-        "px;margin-top: 4px;line-height: ", 
-        sizes, 
-        "px;'>", 
-        labels, 
-        "</div>"
-      )
-    
-    return(
-      addLegend(
-        map, 
-        position = position, 
-        title = title, 
-        colors = colorAdditions, 
-        labels = labelAdditions, 
-        opacity = opacity
-      )
-    )
-  }
+# # https://stackoverflow.com/questions/37446283/creating-legend-with-circles-leaflet-r
+# addLegendCustom <- 
+#   function(
+#     map, 
+#     position = "bottomright", 
+#     title = "", 
+#     colors, 
+#     labels, 
+#     sizes, 
+#     opacity = 0.5
+#   ){
+#     colorAdditions <- 
+#       paste0(
+#         colors, 
+#         "; width:", 
+#         sizes, 
+#         "px; height:", 
+#         sizes, 
+#         "px"
+#       )
+#     
+#     labelAdditions <- 
+#       paste0(
+#         "<div style='display: inline-block;height: ", 
+#         sizes, 
+#         "px;margin-top: 4px;line-height: ", 
+#         sizes, 
+#         "px;'>", 
+#         labels, 
+#         "</div>"
+#       )
+#     
+#     return(
+#       addLegend(
+#         map, 
+#         position = position, 
+#         title = title, 
+#         colors = colorAdditions, 
+#         labels = labelAdditions, 
+#         opacity = opacity
+#       )
+#     )
+#   }
 
 
 #' Wrapper function to produce daily or anomaly plots
