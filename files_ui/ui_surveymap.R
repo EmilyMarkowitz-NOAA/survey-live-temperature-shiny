@@ -7,7 +7,6 @@ ui_surveymap <- function(id) {
       width = 10,
       tabPanel(
         "Map",
-  
           leafletOutput(
             ns("mymap"),
             # 'vh' dynamically adjusts height of map to indicated % of window size

@@ -21,7 +21,6 @@ s_surveymap <- function(id) {
     
     # Build the base map -----
     output$mymap <- renderLeaflet({
-      a <- 
         leaflet(
           options = leafletOptions(
             crs = leafletCRS(
@@ -248,20 +247,20 @@ s_surveymap <- function(id) {
             color       = "black",
             fillColor   = ~pal(temperature_bin),
             fillOpacity = 0.9,
-          popup       = paste(
-            "<strong>Region:</strong>",
-            dat_temps_crnr()$survey_long,
-            "<br>",
-            "<strong>Station:</strong>",
-            dat_temps_crnr()$station,
-            "<br>",
-            "<strong>Depth:</strong>",
-            dat_temps_crnr()$depth_m,
-            "(m)",
-            "<br>",
-            "<strong>Temperature:</strong>",
-            dat_temps_crnr()$temperature_c,
-            "(°C)"
+            popup       = paste(
+              "<strong>Region:</strong>",
+              dat_temps_crnr()$survey_long,
+              "<br>",
+              "<strong>Station:</strong>",
+              dat_temps_crnr()$station,
+              "<br>",
+              "<strong>Depth:</strong>",
+              dat_temps_crnr()$depth_m,
+              "(m)",
+              "<br>",
+              "<strong>Temperature:</strong>",
+              dat_temps_crnr()$temperature_c,
+              "(°C)"
             )
           ) %>%
           # Temperature Legend -----
