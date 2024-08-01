@@ -129,11 +129,20 @@ s_surveymap <- function(id) {
     ## Temperature color palette -----
     pal_tmp <- reactive({
       leaflet::colorFactor(
+        if (input$plot_color == "default") {
+          palette = rainbow(
+            n     = (length(unique(filter(dat, temperature_type == input$plot_unit)$temperature_bin))),
+            start = 0.2, 
+            end   = 0.8,
+            rev   = TRUE
+          )
+        } else {
         palette  = viridis_pal(
           begin  = 0.2,
           end    = 0.8,
           option = input$plot_color
-        )(length(unique(filter(dat, temperature_type == input$plot_unit)$temperature_bin))),
+        )(length(unique(filter(dat, temperature_type == input$plot_unit)$temperature_bin)))
+        },
         domain = unique(filter(dat, temperature_type == input$plot_unit)$temperature_bin),
         na.color   = "transparent"
       )

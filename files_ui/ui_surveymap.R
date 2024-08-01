@@ -68,6 +68,7 @@ ui_surveymap <- function(id) {
           inputId = ns("plot_color"),
           label   = "Color scheme",
           choices = c(
+            "Default" = "default",
             "Magma"   = "A",
             "Inferno" = "B",
             "Plasma"  = "C",
@@ -77,7 +78,7 @@ ui_surveymap <- function(id) {
             "Mako"    = "G",
             "Turbo"   = "H"
           ),
-          selected = "A"
+          selected = "default"
         ),
         p("Additional toggles"),
         checkboxInput(
