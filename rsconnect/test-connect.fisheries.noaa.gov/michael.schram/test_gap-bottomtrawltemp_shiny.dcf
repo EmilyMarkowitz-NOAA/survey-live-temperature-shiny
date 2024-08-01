@@ -1,0 +1,12 @@
+name: test_gap-bottomtrawltemp_shiny
+title: TEST_GAP-BottomTrawlTemp_Shiny
+username: michael.schram
+account: michael.schram
+server: test-connect.fisheries.noaa.gov
+hostUrl: https://test-connect.fisheries.noaa.gov/__api__
+appId: 307
+bundleId: 1389
+url: https://test-connect.fisheries.noaa.gov/content/2e419905-1bfb-4820-bd4c-84584455fb75/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
