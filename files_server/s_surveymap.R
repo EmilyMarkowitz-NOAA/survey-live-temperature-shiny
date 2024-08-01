@@ -414,6 +414,7 @@ s_surveymap <- function(id) {
           )
       }
     
+    ## Data Table ----  
     output$DataTable <- 
       DT::renderDataTable(
         datatable(
