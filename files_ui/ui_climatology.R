@@ -3,7 +3,7 @@ ui_climatology <- function(id) {
   
   fluidPage(
     tabBox(
-      title = "Alaska Bottom Trawl Survey",
+      title = "Alaska Bottom Trawl Survey - Climatology",
       width = 10,
       tabPanel(
         "Map",
@@ -60,6 +60,7 @@ ui_climatology <- function(id) {
           inputId = ns("plot_color"),
           label   = "Color scheme",
           choices = c(
+            "Default" = "default",
             "Magma"   = "A",
             "Inferno" = "B",
             "Plasma"  = "C",
@@ -69,7 +70,7 @@ ui_climatology <- function(id) {
             "Mako"    = "G",
             "Turbo"   = "H"
           ),
-          selected = "A"
+          selected = "default"
         ),
         p("Additional toggles"),
         checkboxInput(

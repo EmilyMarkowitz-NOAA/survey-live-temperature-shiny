@@ -6,14 +6,14 @@ s_climatology <- function(id) {
     `%!in%` <- Negate(`%in%`)
     
     ## Survey regions color palette ----
-    pal_shp <- 
+    pal_shp <-
       colorFactor(
         viridis_pal(
           # mako
-          option = "G", 
-          begin  = 0.2, 
+          option = "G",
+          begin  = 0.2,
           end    = 0.8
-        )(length(unique(shp_all$survey.area$SRVY))),  
+        )(length(unique(shp_all$survey.area$SRVY))),
         domain   = unique(shp_all$survey.area$SRVY),
         na.color = "transparent"
       )
@@ -29,8 +29,8 @@ s_climatology <- function(id) {
               proj4def    = "+proj=aea +lat_1=55 +lat_2=65 +lat_0=50 +lon_0=-154 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs",
               resolutions = 2^(16:7)
             ),
-            minZoom = 4,
-            zoomSnap = 0.5,
+            minZoom   = 4,
+            zoomSnap  = 0.5,
             zoomDelta = 0.5
           ) 
         ) %>%
@@ -107,8 +107,8 @@ s_climatology <- function(id) {
           polylineOptions = filterNULL(
             list(
               shapeOptions = drawShapeOptions(
-                lineJoin = "round",
-                weight   = 3
+                lineJoin   = "round",
+                weight     = 3
               )
             )
           ),
@@ -125,45 +125,75 @@ s_climatology <- function(id) {
         )
     })
     
-    # Reactive Expressions -----
-    ## Temperature color palette -----
+  # Reactive Expressions -----
+  ## Temperature color palette -----
     pal_tmp <- reactive({
       leaflet::colorFactor(
-        palette  = viridis_pal(
-          begin  = 0.2,
-          end    = 0.8,
-          option = input$plot_color
-        )(length(unique(filter(dat, temperature_type == input$plot_unit)$temperature_bin))),
-        domain = unique(filter(dat, temperature_type == input$plot_unit)$temperature_bin),
-        na.color   = "transparent"
+        if (input$plot_color == "default") {
+          palette = rainbow(
+            n     = (length(unique(filter(dat, temperature_type == input$plot_unit)$temperature_bin))),
+            start = 0.2, 
+            end   = 0.8,
+            rev   = TRUE
+          )
+        } else {
+          palette  = viridis_pal(
+            begin  = 0.2,
+            end    = 0.8,
+            option = input$plot_color
+          )(length(unique(filter(dat, temperature_type == input$plot_unit)$temperature_bin)))
+        },
+        domain   = unique(filter(dat, temperature_type == input$plot_unit)$temperature_bin),
+        na.color = "transparent"
       )
     })
-    
+  
     ## Subset data based on user selection -----
     dat_temps_grid <- reactive({
-      dat %>%
-        dplyr::filter(
-          SRVY %in% input$survey,
-          year %in% input$dateRange,
-          temperature_type == input$plot_unit,
-          grepl("-", station),
-          is.na(comment)
+        bind_rows(
+          dat %>%
+          dplyr::filter(
+            SRVY %in% input$survey,
+            year %in% input$dateRange,
+            temperature_type == input$plot_unit,
+            grepl("-", station),
+            is.na(comment)
+          ),
+          dat %>%
+          dplyr::filter(
+            SRVY %in% input$survey,
+            year %in% input$dateRange,
+            temperature_type == input$plot_unit,
+            !grepl("-", station),
+            !is.na(comment)
+          )
         ) %>%
-        st_transform(crs = "+proj=longlat +datum=WGS84")
+        st_transform(
+          crs = "+proj=longlat +datum=WGS84"
+        ) %>%
+        summarize(
+          mean_temp  = round(mean(temperature_c, na.rm = TRUE), 2),
+          .by        = c(station, SRVY, survey_long, geometry)
+        ) %>%
+        mutate(
+          temperature_bin = base::cut(
+            x = as.numeric(mean_temp),
+            breaks         = var_breaks,
+            labels         = FALSE,
+            include.lowest = TRUE,
+            right          = FALSE,
+          ),
+          .after = mean_temp
+        ) %>%
+        mutate(
+          temperature_bin = base::factor(
+            x      = var_labels[temperature_bin],
+            levels = var_labels,
+            labels = var_labels,
+          )
+        )
     })
-    
-    dat_temps_crnr <- reactive({
-      dat %>%
-        dplyr::filter(
-          SRVY %in% input$survey,
-          year %in% input$dateRange,
-          temperature_type == input$plot_unit,
-          !grepl("-", station),
-          !is.na(comment)
-        ) %>%
-        st_transform(crs = "+proj=longlat +datum=WGS84")
-    }) 
-    
+ 
     # Add Map features ----
     observeEvent(input$updateButton, {
       ## Survey region polygons ----
@@ -189,19 +219,18 @@ s_climatology <- function(id) {
         label          = ~paste(survey_long),
         labelOptions   = labelOptions(direction = "auto")
       )
-      
+
       ## Temperature Data -----
       if (input$plot_unit != "none") {
-      
+
         pal <- pal_tmp()
-        
+
         leafletProxy(
           "climatology"
         ) %>%
           clearGroup(
             c(
-              "temps_grid", 
-              "temps_crnr"
+              "temps_grid"
             )
           ) %>%
           removeControl(
@@ -216,7 +245,10 @@ s_climatology <- function(id) {
             zIndex = 460
           ) %>%
           addPolygons(
-            data        = dat_temps_grid(),
+            # # Toggle on for all data
+            # data        = dat_temps_grid(),
+            # toggle on for EBS only (better for testing)
+            data        = dat_temps_grid() %>% dplyr::filter(SRVY == "EBS"),
             group       = "temps_grid",
             options     = pathOptions(pane = "grid"),
             weight      = 1,
@@ -230,36 +262,8 @@ s_climatology <- function(id) {
               "<strong>Station:</strong>",
               dat_temps_grid()$station,
               "<br>",
-              "<strong>Depth:</strong>",
-              dat_temps_grid()$depth_m,
-              "(m)",
-              "<br>",
-              "<strong>Temperature:</strong>",
-              dat_temps_grid()$temperature_c,
-              "(°C)"
-            )
-          ) %>%
-          addPolygons(
-            data        = dat_temps_crnr(),
-            group       = "temps_crnr",
-            options     = pathOptions(pane = "corners"),
-            weight      = 1,
-            color       = "black",
-            fillColor   = ~pal(temperature_bin),
-            fillOpacity = 0.9,
-            popup       = paste(
-              "<strong>Region:</strong>",
-              dat_temps_crnr()$survey_long,
-              "<br>",
-              "<strong>Station:</strong>",
-              dat_temps_crnr()$station,
-              "<br>",
-              "<strong>Depth:</strong>",
-              dat_temps_crnr()$depth_m,
-              "(m)",
-              "<br>",
-              "<strong>Temperature:</strong>",
-              dat_temps_crnr()$temperature_c,
+              "<strong>Mean temperature:</strong>",
+              dat_temps_grid()$mean_temp,
               "(°C)"
             )
           ) %>%
@@ -278,16 +282,15 @@ s_climatology <- function(id) {
         ) %>%
           clearGroup(
             c(
-              "temps_grid", 
-              "temps_crnr"
+              "temps_grid"
             )
           ) %>%
           removeControl(
             "temps_legend"
           )
       }
-    
-      
+
+
       ## Add bathymetric countours ------
       if (input$bathymetry) {
         leafletProxy(
@@ -321,7 +324,7 @@ s_climatology <- function(id) {
             "survey_bathymetry"
           )
       }
-      
+
       ## Survey Strata -----
       if (input$stratum) {
         leafletProxy(
@@ -372,7 +375,7 @@ s_climatology <- function(id) {
             "survey_strata"
           )
       }
-  
+
       ## Stations -----
       if (input$station && input$plot_unit == "none") {
         leafletProxy(
@@ -413,8 +416,8 @@ s_climatology <- function(id) {
             "survey_stations"
           )
       }
-    
-    output$ClimatologyTable <- 
+
+    output$ClimatologyTable <-
       DT::renderDataTable(
         datatable(
           dplyr::bind_rows(
@@ -436,7 +439,7 @@ s_climatology <- function(id) {
                 survey,
                 vessel_id,
                 vessel_color,
-                vessel_ital, 
+                vessel_ital,
                 vessel_shape,
                 temperature_type,
                 temperature_bin,
@@ -456,20 +459,20 @@ s_climatology <- function(id) {
             ) %>%
             st_drop_geometry(),
           options = list(
-            pageLength = 50, 
-            dom        = 'tip', 
+            pageLength = 50,
+            dom        = 'tip',
             dom        = 't',
-            ordering   = FALSE, 
+            ordering   = FALSE,
             paging     = FALSE
           ),
           class = "cell-border stripe",
           rownames = FALSE,
-          # caption = 'Table 2: Defined terms used in web tool.', 
+          # caption = 'Table 2: Defined terms used in web tool.',
           escape   = FALSE
         ) %>%
           formatRound(c("Starting Lat (dd)", "Starting Long (dd)"), 3)
       )
-    
+
     })
   })
 }
