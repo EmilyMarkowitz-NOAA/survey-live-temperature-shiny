@@ -247,6 +247,7 @@ ui <-
 # Server -----------------------------------------------------------------------
 server <- function(input, output, session){
   s_surveymap("id_surveymap")
+  s_climatology("id_climatology")
   s_glossary("id_glossary")
 }
 
