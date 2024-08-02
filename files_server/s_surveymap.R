@@ -150,28 +150,28 @@ s_surveymap <- function(id) {
     
     ## Subset data based on user selection -----
     dat_temps_grid <- reactive({
-      dat %>%
-        dplyr::filter(
-          SRVY %in% input$survey,
-          year == input$year,
-          temperature_type == input$plot_unit,
-          grepl("-", station),
-          is.na(comment)
+        bind_rows(
+          dat %>%
+          dplyr::filter(
+            SRVY %in% input$survey,
+            year == input$year,
+            temperature_type == input$plot_unit,
+            grepl("-", station),
+            is.na(comment)
+          ),
+          dat %>%
+          dplyr::filter(
+            SRVY %in% input$survey,
+            year == input$year,
+            temperature_type == input$plot_unit,
+            !grepl("-", station),
+            !is.na(comment)
+          )
         ) %>%
-        st_transform(crs = "+proj=longlat +datum=WGS84")
+        st_transform(
+          crs = "+proj=longlat +datum=WGS84"
+        ) 
     })
-    
-    dat_temps_crnr <- reactive({
-      dat %>%
-        dplyr::filter(
-          SRVY %in% input$survey,
-          year == input$year,
-          temperature_type == input$plot_unit,
-          !grepl("-", station),
-          !is.na(comment)
-        ) %>%
-        st_transform(crs = "+proj=longlat +datum=WGS84")
-    }) 
     
     # Add Map features ----
     observeEvent(input$updateButton, {
@@ -209,8 +209,7 @@ s_surveymap <- function(id) {
         ) %>%
           clearGroup(
             c(
-              "temps_grid", 
-              "temps_crnr"
+              "temps_grid" 
             )
           ) %>%
           removeControl(
@@ -248,30 +247,6 @@ s_surveymap <- function(id) {
               "(°C)"
             )
           ) %>%
-          addPolygons(
-            data        = dat_temps_crnr(),
-            group       = "temps_crnr",
-            options     = pathOptions(pane = "corners"),
-            weight      = 1,
-            color       = "black",
-            fillColor   = ~pal(temperature_bin),
-            fillOpacity = 0.9,
-            popup       = paste(
-              "<strong>Region:</strong>",
-              dat_temps_crnr()$survey_long,
-              "<br>",
-              "<strong>Station:</strong>",
-              dat_temps_crnr()$station,
-              "<br>",
-              "<strong>Depth:</strong>",
-              dat_temps_crnr()$depth_m,
-              "(m)",
-              "<br>",
-              "<strong>Temperature:</strong>",
-              dat_temps_crnr()$temperature_c,
-              "(°C)"
-            )
-          ) %>%
           # Temperature Legend -----
           addLegend(
             position = "bottomright",
@@ -287,8 +262,7 @@ s_surveymap <- function(id) {
         ) %>%
           clearGroup(
             c(
-              "temps_grid", 
-              "temps_crnr"
+              "temps_grid"
             )
           ) %>%
           removeControl(
@@ -427,10 +401,7 @@ s_surveymap <- function(id) {
     output$DataTable <- 
       DT::renderDataTable(
         datatable(
-          dplyr::bind_rows(
-            dat_temps_grid(),
-            dat_temps_crnr()
-          ) %>%
+          dat_temps_grid() %>%
             dplyr::mutate(
               Date = as.IDate(date),
               "Time (z)" = as.ITime(date),
